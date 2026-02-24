@@ -1,6 +1,4 @@
 import { type NextRequest } from "next/server";
-// import { getAllowedOrigin, isAllowedOrigin } from "@/lib/config/cors";
-
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") ?? [];
 
