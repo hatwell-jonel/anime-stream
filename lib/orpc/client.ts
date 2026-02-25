@@ -2,7 +2,7 @@ import { createORPCClient, onError } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import { RouterClient } from '@orpc/server'
 import { DedupeRequestsPlugin } from "@orpc/client/plugins";
-import { TAnimeRouter } from './procedures/anime';
+import { TAnimeRouter } from './router';
 
 function getBaseUrl() {
   if (typeof window !== "undefined") {
