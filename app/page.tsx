@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { orpc } from '~/lib/tanstackquery/orpc';
-
+import ReactPlayer from 'react-player'
+import { getProxyUrl } from '~/lib/proxy';
 
 function Page() {
       // HOME
@@ -133,17 +134,18 @@ function Page() {
       const { data: episodeSourcesData, isLoading: episodeSourcesLoading } = useQuery(
             orpc.anime.getAnimeEpisodeSources.queryOptions({
                   input: {
-                        episodeId: "one-piece-100?ep=1",
+                        episodeId: "one-piece-100?ep=2142",
                         server: "hd-2",
-                        category: "sub",
+                        category: "dub",
                   },
             }),
       );
+      console.log(getProxyUrl(String(episodeSourcesData?.sources?.[0]?.url)));
 
       
       return (
             <div>
-                  Page
+                  <ReactPlayer src={getProxyUrl(String(episodeSourcesData?.sources?.[0]?.url))} controls />
             </div>
       )
 }
