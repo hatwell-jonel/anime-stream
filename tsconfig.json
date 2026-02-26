@@ -19,9 +19,8 @@
       }
     ],
     "paths": {
-      "~/components/*": ["./components/*"],
-      "~/hooks/*": ["./hooks/*"],
-      "~/lib/*": ["./lib/*"],
+      "@/*": ["./src/*"],
+      "~/features/*": ["./src/app/features/*"],
     }
   },
   "include": [
