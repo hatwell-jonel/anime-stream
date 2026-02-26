@@ -1,3 +1,15 @@
+
+import React from 'react'
+
+function AnimePage() {
+  return (
+    <div>AnimePage</div>
+  )
+}
+
+export default AnimePage
+
+
 // import { MediaPlayer, MediaPlayerInstance, MediaProvider, Poster } from '@vidstack/react';
 // import Image from 'next/image';
 // import Link from 'next/link';

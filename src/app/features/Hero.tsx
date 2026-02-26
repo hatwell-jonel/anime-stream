@@ -12,6 +12,7 @@ import { Autoplay, Pagination, EffectFade } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/effect-fade'
+import Link from 'next/link';
 
 export default function Hero() {
     const { data: homeData, isLoading: homeLoading } = useQuery(
@@ -108,8 +109,13 @@ export default function Hero() {
                                         size="lg"
                                         className="bg-white text-black hover:bg-gray-200 font-bold gap-2"
                                     >
-                                        <Play className="w-5 h-5 fill-current" />
-                                        Play
+                                        <Link
+                                            href={`/watch/${anime.id}/1`}
+                                            className='flex items-center gap-2'
+                                        >
+                                            <Play className="w-5 h-5 fill-current" />
+                                            Play
+                                        </Link>
                                     </Button>
 
                                     <Button

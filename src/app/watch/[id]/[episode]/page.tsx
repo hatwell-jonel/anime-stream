@@ -1,0 +1,778 @@
+'use client';
+
+
+import { Home } from 'lucide-react';
+import Link from 'next/link';
+import React, { use, useMemo, useRef } from 'react'
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { orpc } from '@/lib/tanstackquery/orpc';
+import { useQuery } from '@tanstack/react-query';
+import { getProxyUrl } from '@/lib/proxy';
+import { Spinner } from '@/components/ui/spinner';
+
+import {
+  MediaPlayer,
+  MediaProvider,
+  Poster,
+  type MediaPlayerInstance,
+} from "@vidstack/react"
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
+
+
+interface PageProps {
+  params: Promise<{ id: string; episode: string }>;
+}
+
+interface WatchBreadcrumbProps {
+  id: string;
+  episode: string;
+}
+
+
+function WatchBreadcrumb(data: WatchBreadcrumbProps) {
+  
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        {/* Home */}
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href="/">
+              <Home className="w-5 h-5" />
+            </Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+
+        <BreadcrumbSeparator />
+
+        {/* Anime Page */}
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href={`/anime/${data.id}`}>
+              {data.id}
+            </Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+
+        <BreadcrumbSeparator />
+
+        {/* Current Episode */}
+        <BreadcrumbItem>
+          <BreadcrumbPage>
+            EP {data.episode}
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
+
+function WatchPage({ params }: PageProps) {
+
+  const playerRef = useRef<MediaPlayerInstance>(null);
+  const resolvedParams = use(params);
+
+  // const { data: currentAnime, isLoading: isCurrentAnimeLoading } = useQuery(
+  //   orpc.anime.getAnimeAboutInfo.queryOptions({ input: { animeId: resolvedParams.id } }),
+  // );
+
+  // const { data: currentAnimeEpisode, isLoading: isCurrentAnimeEpisodeLoading } = useQuery(
+  //   orpc.anime.getAnimeEpisodes.queryOptions({ input: { animeId: resolvedParams.id } }),
+  // );
+
+  // const allEpisodes = useMemo(() => currentAnimeEpisode?.episodes ?? [], [currentAnimeEpisode?.episodes]);
+
+  // const currentEpisode = allEpisodes.find(
+  //   (ep) => ep.number === parseInt(resolvedParams.episode),
+  // );
+  // const episodeId = currentEpisode?.episodeId;
+  // console.log("episodeId", episodeId);
+
+    const { data: episodeSourcesData, isLoading: episodeSourcesLoading } = useQuery(
+          orpc.anime.getAnimeEpisodeSources.queryOptions({
+                input: {
+                      episodeId: "one-piece-100?ep=2142",
+                      server: "hd-2",
+                      category: "sub",
+                },
+          }),
+    );
+    console.log("episodeSourcesData", episodeSourcesData);
+    const streamingSources = episodeSourcesData?.sources ?? [];
+
+
+  // const { data: sourcesData, isLoading: sourcesLoading } = useQuery({
+  //   ...orpc.anime.getAnimeEpisodeSources.queryOptions({
+  //     input: {
+  //       episodeId: episodeId ?? "",
+  //       server: selectedServer,
+  //       category: selectedCategory,
+  //     },
+  //   }),
+  //   enabled: !!episodeId && !!selectedServer,
+  //   refetchOnWindowFocus: false,
+  //   placeholderData: keepPreviousData,
+  // });
+
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <WatchBreadcrumb   id={resolvedParams.id} episode={resolvedParams.episode}  />
+
+          {/* Main Layout */}
+      <div className="min-h-screen pt-14 md:pt-16 pb-6 md:pb-8 px-4 md:px-6 flex justify-center">
+        <div className="flex flex-col xl:flex-row gap-0 xl:gap-6 w-full max-w-[1300px]">
+          {/* Video Area */}
+          <main className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col w-full">
+
+              {/* Video Player */}
+              <div className="relative rounded-lg md:rounded-2xl overflow-hidden">
+                <div className="aspect-video relative">
+                  {episodeSourcesLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                      <div className="flex flex-col items-center gap-4">
+                        <Spinner className="size-8 text-foreground/30" />
+                        <p className="text-sm text-foreground/40">
+                          Loading stream...
+                        </p>
+                      </div>
+                    </div>
+                  ) : streamingSources.length > 0 ? (
+                    <MediaPlayer
+                      ref={playerRef}
+                      key={streamingSources[0]?.url}
+                      src={{
+                        src: getProxyUrl(streamingSources[0]?.url),
+                        type: "application/x-mpegurl",
+                      }}
+                      controls
+                      // viewType="video"
+                      // streamType="on-demand"
+                      // playsInline
+                      // crossOrigin="anonymous"
+                      // autoPlay={preferences.autoplay}
+                      // onProviderChange={onProviderChange}
+                      // onCanPlay={onCanPlay}
+                      // onTimeUpdate={onTimeUpdate}
+                      // onVolumeChange={onVolumeChange}
+                      // onRateChange={onRateChange}
+                      // onTextTrackChange={onTextTrackChange}
+                      // onEnded={onEnded}
+                      // onSeeked={onSeeked}
+                      className="w-full h-full"
+                    >
+                      <MediaProvider />
+                        {/* <Poster
+                          className="vds-poster object-cover object-center"
+                          src={getProxyUrl(info.poster)}
+                          alt={`image`}
+                        />
+                      </MediaProvider> */}
+                      {/* {subtitles.map((subtitle, index) => {
+                        const isPreferredLang = preferences.captionLanguage
+                          ? subtitle.lang
+                              .toLowerCase()
+                              .includes(
+                                preferences.captionLanguage.toLowerCase(),
+                              )
+                          : false;
+                        const isDefault = preferences.captionLanguage
+                          ? isPreferredLang
+                          : index === 0;
+                        return (
+                          <Track
+                            key={`${subtitle.lang}-${index}`}
+                            src={getProxyUrl(subtitle.url)}
+                            kind="subtitles"
+                            label={subtitle.lang}
+                            language={subtitle.lang.toLowerCase().slice(0, 2)}
+                            default={isDefault}
+                          />
+                        );
+                      })} */}
+                      {/* <SkipButton intro={intro} outro={outro} autoSkip={preferences.autoSkip} />
+                      {showCountdown && nextEpisode && (
+                        <NextEpisodeCountdown
+                          nextEpisode={nextEpisode}
+                          onCancel={cancelCountdown}
+                          onPlayNow={navigateToNext}
+                        />
+                      )}
+                      <DefaultVideoLayout
+                        icons={defaultLayoutIcons}
+                        thumbnails={
+                          thumbnailTrack
+                            ? getProxyUrl(thumbnailTrack.url)
+                            : undefined
+                        }
+                        slots={{
+                          playbackMenuItemsEnd: (
+                            <>
+                              <MenuToggle
+                                label="Auto Skip Intro/Outro"
+                                checked={preferences.autoSkip}
+                                onChange={(checked) =>
+                                  updatePreferences({ autoSkip: checked })
+                                }
+                              />
+                              <MenuToggle
+                                label="Auto Play Next Episode"
+                                checked={preferences.autoNextEpisode}
+                                onChange={(checked) =>
+                                  updatePreferences({ autoNextEpisode: checked })
+                                }
+                              />
+                            </>
+                          ),
+                        }}
+                      /> */}
+                    </MediaPlayer>
+                  ) : (
+                    <>
+                      {/* <Image
+                        src={info.poster}
+                        alt={`${info.name} Episode ${currentEpisode}`}
+                        fill
+                        className="object-cover opacity-30 blur-sm"
+                      /> */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-16 h-16 rounded-full border border-border flex items-center justify-center mx-auto mb-4">
+                            <svg
+                              className="w-6 h-6 text-foreground/30"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                              />
+                            </svg>
+                          </div>
+                          <p className="text-foreground/60 text-sm mb-1">
+                            Video unavailable
+                          </p>
+                          <p className="text-foreground/30 text-xs">
+                            Try selecting a different server
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </main>
+        </div>
+      </div>
+
+
+
+      {/* Custom scrollbar styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: oklch(0.98 0 0 / 10%);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: oklch(0.98 0 0 / 20%);
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default WatchPage
+
+
+      // {/* Main Layout */}
+      // <div className="min-h-screen pt-14 md:pt-16 pb-6 md:pb-8 px-4 md:px-6 flex justify-center">
+      //   <div className="flex flex-col xl:flex-row gap-0 xl:gap-6 w-full max-w-[1300px]">
+      //     {/* Video Area */}
+      //     <main className="flex-1 flex flex-col">
+      //       <div className="flex-1 flex flex-col w-full">
+      //         {/* Video Player */}
+      //         <div className="relative rounded-lg md:rounded-2xl overflow-hidden">
+      //           <div className="aspect-video relative">
+      //             {sourcesLoading ? (
+      //               <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+      //                 <div className="flex flex-col items-center gap-4">
+      //                   <Spinner className="size-8 text-foreground/30" />
+      //                   <p className="text-sm text-foreground/40">
+      //                     Loading stream...
+      //                   </p>
+      //                 </div>
+      //               </div>
+      //             ) : streamingSources.length > 0 ? (
+      //               <MediaPlayer
+      //                 ref={playerRef}
+      //                 key={`${episodeId}-${selectedServer}-${selectedCategory}`}
+      //                 src={{
+      //                   src: getProxyUrl(streamingSources[0]?.url),
+      //                   type: "application/x-mpegurl",
+      //                 }}
+      //                 viewType="video"
+      //                 streamType="on-demand"
+      //                 playsInline
+      //                 autoPlay={preferences.autoplay}
+      //                 crossOrigin="anonymous"
+      //                 onProviderChange={onProviderChange}
+      //                 onCanPlay={onCanPlay}
+      //                 onTimeUpdate={onTimeUpdate}
+      //                 onVolumeChange={onVolumeChange}
+      //                 onRateChange={onRateChange}
+      //                 onTextTrackChange={onTextTrackChange}
+      //                 onEnded={onEnded}
+      //                 onSeeked={onSeeked}
+      //                 className="w-full h-full"
+      //               >
+      //                 <MediaProvider>
+      //                   <Poster
+      //                     className="vds-poster object-cover object-center"
+      //                     src={getProxyUrl(info.poster)}
+      //                     alt={`${info.name} Episode ${currentEpisode}`}
+      //                   />
+      //                 </MediaProvider>
+      //                 {subtitles.map((subtitle, index) => {
+      //                   const isPreferredLang = preferences.captionLanguage
+      //                     ? subtitle.lang
+      //                         .toLowerCase()
+      //                         .includes(
+      //                           preferences.captionLanguage.toLowerCase(),
+      //                         )
+      //                     : false;
+      //                   const isDefault = preferences.captionLanguage
+      //                     ? isPreferredLang
+      //                     : index === 0;
+      //                   return (
+      //                     <Track
+      //                       key={`${subtitle.lang}-${index}`}
+      //                       src={getProxyUrl(subtitle.url)}
+      //                       kind="subtitles"
+      //                       label={subtitle.lang}
+      //                       language={subtitle.lang.toLowerCase().slice(0, 2)}
+      //                       default={isDefault}
+      //                     />
+      //                   );
+      //                 })}
+      //                 <SkipButton intro={intro} outro={outro} autoSkip={preferences.autoSkip} />
+      //                 {showCountdown && nextEpisode && (
+      //                   <NextEpisodeCountdown
+      //                     nextEpisode={nextEpisode}
+      //                     onCancel={cancelCountdown}
+      //                     onPlayNow={navigateToNext}
+      //                   />
+      //                 )}
+      //                 <DefaultVideoLayout
+      //                   icons={defaultLayoutIcons}
+      //                   thumbnails={
+      //                     thumbnailTrack
+      //                       ? getProxyUrl(thumbnailTrack.url)
+      //                       : undefined
+      //                   }
+      //                   slots={{
+      //                     playbackMenuItemsEnd: (
+      //                       <>
+      //                         <MenuToggle
+      //                           label="Auto Skip Intro/Outro"
+      //                           checked={preferences.autoSkip}
+      //                           onChange={(checked) =>
+      //                             updatePreferences({ autoSkip: checked })
+      //                           }
+      //                         />
+      //                         <MenuToggle
+      //                           label="Auto Play Next Episode"
+      //                           checked={preferences.autoNextEpisode}
+      //                           onChange={(checked) =>
+      //                             updatePreferences({ autoNextEpisode: checked })
+      //                           }
+      //                         />
+      //                       </>
+      //                     ),
+      //                   }}
+      //                 />
+      //               </MediaPlayer>
+      //             ) : (
+      //               <>
+      //                 <Image
+      //                   src={info.poster}
+      //                   alt={`${info.name} Episode ${currentEpisode}`}
+      //                   fill
+      //                   className="object-cover opacity-30 blur-sm"
+      //                 />
+      //                 <div className="absolute inset-0 flex items-center justify-center">
+      //                   <div className="text-center">
+      //                     <div className="w-16 h-16 rounded-full border border-border flex items-center justify-center mx-auto mb-4">
+      //                       <svg
+      //                         className="w-6 h-6 text-foreground/30"
+      //                         fill="none"
+      //                         viewBox="0 0 24 24"
+      //                         stroke="currentColor"
+      //                       >
+      //                         <path
+      //                           strokeLinecap="round"
+      //                           strokeLinejoin="round"
+      //                           strokeWidth={1.5}
+      //                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      //                         />
+      //                       </svg>
+      //                     </div>
+      //                     <p className="text-foreground/60 text-sm mb-1">
+      //                       Video unavailable
+      //                     </p>
+      //                     <p className="text-foreground/30 text-xs">
+      //                       Try selecting a different server
+      //                     </p>
+      //                   </div>
+      //                 </div>
+      //               </>
+      //             )}
+      //           </div>
+      //         </div>
+
+      //         {/* Episode Info & Controls */}
+      //         <div className="mt-4 md:mt-6 flex items-start justify-between gap-4 md:gap-8">
+      //           <div className="flex-1 min-w-0">
+      //             <div className="flex items-center gap-2 md:gap-3 mb-2">
+      //               <span className="px-2 py-0.5 rounded bg-foreground/10 text-xs text-foreground/70 font-medium tracking-wide">
+      //                 EP {currentEpisode}
+      //               </span>
+      //               {currentEpisodeData?.isFiller && (
+      //                 <span className="px-2 py-0.5 rounded bg-amber-500/20 text-xs text-amber-400 font-medium tracking-wide">
+      //                   FILLER
+      //                 </span>
+      //               )}
+      //               <span className="text-foreground/30 text-[10px] md:text-xs italic hidden sm:inline">
+      //                 {getTipForEpisode(id, currentEpisode)}
+      //               </span>
+      //             </div>
+      //             <h1 className="text-lg md:text-2xl font-semibold tracking-tight text-foreground/90 mb-1 line-clamp-2">
+      //               {info.name}
+      //             </h1>
+      //             {currentEpisodeData?.title && (
+      //               <p className="text-foreground/40 text-xs md:text-sm line-clamp-1">
+      //                 {currentEpisodeData.title}
+      //               </p>
+      //             )}
+      //           </div>
+
+      //           {/* Navigation */}
+      //           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+      //             {prevEpisode ? (
+      //               <Link
+      //                 href={`/watch/${id}/${prevEpisode}?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`}
+      //                 className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors"
+      //               >
+      //                 <svg
+      //                   className="w-4 h-4 md:w-5 md:h-5 text-foreground/70"
+      //                   fill="none"
+      //                   viewBox="0 0 24 24"
+      //                   stroke="currentColor"
+      //                 >
+      //                   <path
+      //                     strokeLinecap="round"
+      //                     strokeLinejoin="round"
+      //                     strokeWidth={1.5}
+      //                     d="M15 19l-7-7 7-7"
+      //                   />
+      //                 </svg>
+      //               </Link>
+      //             ) : (
+      //               <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-foreground/2 flex items-center justify-center">
+      //                 <svg
+      //                   className="w-4 h-4 md:w-5 md:h-5 text-foreground/20"
+      //                   fill="none"
+      //                   viewBox="0 0 24 24"
+      //                   stroke="currentColor"
+      //                 >
+      //                   <path
+      //                     strokeLinecap="round"
+      //                     strokeLinejoin="round"
+      //                     strokeWidth={1.5}
+      //                     d="M15 19l-7-7 7-7"
+      //                   />
+      //                 </svg>
+      //               </div>
+      //             )}
+      //             {nextEpisode ? (
+      //               <Link
+      //                 href={`/watch/${id}/${nextEpisode}?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`}
+      //                 className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors"
+      //               >
+      //                 <svg
+      //                   className="w-4 h-4 md:w-5 md:h-5 text-foreground"
+      //                   fill="none"
+      //                   viewBox="0 0 24 24"
+      //                   stroke="currentColor"
+      //                 >
+      //                   <path
+      //                     strokeLinecap="round"
+      //                     strokeLinejoin="round"
+      //                     strokeWidth={1.5}
+      //                     d="M9 5l7 7-7 7"
+      //                   />
+      //                 </svg>
+      //               </Link>
+      //             ) : (
+      //               <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-foreground/2 flex items-center justify-center">
+      //                 <svg
+      //                   className="w-4 h-4 md:w-5 md:h-5 text-foreground/20"
+      //                   fill="none"
+      //                   viewBox="0 0 24 24"
+      //                   stroke="currentColor"
+      //                 >
+      //                   <path
+      //                     strokeLinecap="round"
+      //                     strokeLinejoin="round"
+      //                     strokeWidth={1.5}
+      //                     d="M9 5l7 7-7 7"
+      //                   />
+      //                 </svg>
+      //               </div>
+      //             )}
+      //           </div>
+      //         </div>
+
+      //         {/* Server Selection */}
+      //         <div className="mt-4 md:mt-6 p-3 md:p-4 rounded-xl bg-foreground/2 border border-border">
+      //           <div className="flex flex-wrap items-center gap-4 md:gap-6">
+      //             {/* Audio Toggle */}
+      //             <div className="flex items-center gap-2 md:gap-3">
+      //               <span className="text-[10px] md:text-xs text-foreground/40 uppercase tracking-wider">
+      //                 Audio
+      //               </span>
+      //               <div className="flex rounded-lg bg-foreground/3 p-0.5 md:p-1">
+      //                 <button
+      //                   onClick={() => setSelectedCategory("sub")}
+      //                   disabled={subServers.length === 0}
+      //                   className={`px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+      //                     selectedCategory === "sub"
+      //                       ? "bg-foreground/10 text-foreground shadow-sm"
+      //                       : "text-foreground/50 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed"
+      //                   }`}
+      //                 >
+      //                   SUB
+      //                 </button>
+      //                 <button
+      //                   onClick={() => setSelectedCategory("dub")}
+      //                   disabled={dubServers.length === 0}
+      //                   className={`px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+      //                     selectedCategory === "dub"
+      //                       ? "bg-foreground/10 text-foreground shadow-sm"
+      //                       : "text-foreground/50 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed"
+      //                   }`}
+      //                 >
+      //                   DUB
+      //                 </button>
+      //               </div>
+      //             </div>
+
+      //             <div className="hidden md:block w-px h-6 bg-foreground/10" />
+
+      //             {/* Servers */}
+      //             <div className="flex items-center gap-2 md:gap-3">
+      //               <span className="text-[10px] md:text-xs text-foreground/40 uppercase tracking-wider">
+      //                 Server
+      //               </span>
+      //               <div className="flex flex-wrap gap-1.5 md:gap-2">
+      //                 {(selectedCategory === "sub"
+      //                   ? subServers
+      //                   : dubServers
+      //                 ).map((server) => {
+      //                   const serverName = server.serverName;
+      //                   if (!isAnimeServer(serverName)) return null;
+      //                   return (
+      //                     <button
+      //                       key={serverName}
+      //                       onClick={() => setSelectedServer(serverName)}
+      //                       className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+      //                         selectedServer === serverName
+      //                           ? "bg-foreground text-background"
+      //                           : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground/80"
+      //                       }`}
+      //                     >
+      //                       {serverName}
+      //                     </button>
+      //                   );
+      //                 })}
+      //               </div>
+      //             </div>
+      //           </div>
+      //         </div>
+      //       </div>
+      //     </main>
+
+      //     {/* Sidebar */}
+      //     <aside className="w-full xl:w-[380px] shrink-0 mt-6 xl:mt-0 pt-6 xl:pt-0 border-t xl:border-t-0 border-border flex flex-col xl:overflow-y-auto custom-scrollbar">
+      //       {/* Anime Info Card - Hidden on mobile since info is shown above video */}
+      //       <div className="hidden xl:block p-5 border-b border-border">
+      //         <div className="flex gap-4">
+      //           <div className="relative w-20 aspect-3/4 rounded-lg overflow-hidden shrink-0 ring-1 ring-border">
+      //             <Image
+      //               src={info.poster}
+      //               alt={info.name}
+      //               fill
+      //               className="object-cover"
+      //             />
+      //           </div>
+      //           <div className="flex-1 min-w-0 pt-1">
+      //             <h2 className="font-semibold text-foreground/90 line-clamp-2 leading-snug">
+      //               {info.name}
+      //             </h2>
+      //             <div className="flex items-center gap-2 mt-2 text-xs text-foreground/40">
+      //               <span>{anime.moreInfo?.type}</span>
+      //               <span className="w-1 h-1 rounded-full bg-foreground/20" />
+      //               <span>{totalEpisodes} episodes</span>
+      //             </div>
+      //           </div>
+      //         </div>
+      //       </div>
+
+      //       {/* Episodes Grid */}
+      //       <div className="border-b border-border">
+      //         <div className="px-4 py-3 border-b border-border">
+      //           <div className="flex items-center justify-between mb-3">
+      //             <h3 className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
+      //               Episodes
+      //             </h3>
+      //             <span className="text-xs text-foreground/30">
+      //               {totalEpisodes} total
+      //             </span>
+      //           </div>
+
+      //           {/* Range Selector */}
+      //           {episodeRanges.length > 1 && (
+      //             <div className="flex flex-wrap gap-1">
+      //               {episodeRanges.map((range, index) => (
+      //                 <button
+      //                   key={range.label}
+      //                   onClick={() => setSelectedRange(index)}
+      //                   className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+      //                     effectiveRange === index
+      //                       ? "bg-foreground text-background"
+      //                       : index === activeRangeIndex
+      //                         ? "bg-foreground/10 text-foreground/70 ring-1 ring-foreground/20"
+      //                         : "bg-foreground/3 text-foreground/40 hover:bg-foreground/6 hover:text-foreground/60"
+      //                   }`}
+      //                 >
+      //                   {range.label}
+      //                 </button>
+      //               ))}
+      //             </div>
+      //           )}
+      //         </div>
+
+      //         {episodesLoading ? (
+      //           <div className="py-8 flex items-center justify-center">
+      //             <Spinner className="size-6 text-foreground/20" />
+      //           </div>
+      //         ) : (
+      //           <div className="p-2 md:p-4">
+      //             <div className="grid grid-cols-10 sm:grid-cols-10 md:grid-cols-10 xl:grid-cols-8 gap-1">
+      //               {filteredEpisodes.map((ep) => {
+      //                 const isActive = ep.number === currentEpisode;
+      //                 return (
+      //                   <Link
+      //                     key={ep.episodeId}
+      //                     href={`/watch/${id}/${ep.number}?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`}
+      //                     title={ep.title || `Episode ${ep.number}`}
+      //                     className={`aspect-square rounded flex items-center justify-center text-[11px] md:text-xs font-medium transition-all ${
+      //                       isActive
+      //                         ? "bg-foreground text-background ring-2 ring-foreground ring-offset-1 ring-offset-background"
+      //                         : ep.isFiller
+      //                           ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+      //                           : "bg-foreground/4 text-foreground/50 hover:bg-foreground/8 hover:text-foreground/70"
+      //                     }`}
+      //                   >
+      //                     {ep.number}
+      //                   </Link>
+      //                 );
+      //               })}
+      //             </div>
+
+      //             {/* Legend */}
+      //             <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+      //               <div className="flex items-center gap-1.5">
+      //                 <div className="w-3 h-3 rounded bg-foreground" />
+      //                 <span className="text-[10px] text-foreground/40">
+      //                   Current
+      //                 </span>
+      //               </div>
+      //               <div className="flex items-center gap-1.5">
+      //                 <div className="w-3 h-3 rounded bg-amber-500/30" />
+      //                 <span className="text-[10px] text-foreground/40">
+      //                   Filler
+      //                 </span>
+      //               </div>
+      //             </div>
+      //           </div>
+      //         )}
+      //       </div>
+
+      //       {/* Up Next */}
+      //       {relatedAnime.length > 0 && (
+      //         <div className="xl:flex-1">
+      //           <div className="px-4 py-3 border-b border-border">
+      //             <h3 className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
+      //               Up Next
+      //             </h3>
+      //           </div>
+      //           {/* Mobile: horizontal scroll, Desktop: vertical list */}
+      //           <div className="p-3 md:p-4 xl:p-2">
+      //             <div className="flex xl:flex-col gap-3 overflow-x-auto xl:overflow-x-visible pb-2 xl:pb-0 -mx-3 px-3 xl:mx-0 xl:px-0">
+      //               {relatedAnime.slice(0, 6).map((related) => (
+      //                 <Link
+      //                   key={related.id}
+      //                   href={`/anime/${related.id}`}
+      //                   className="shrink-0 xl:shrink w-32 xl:w-auto xl:flex gap-3 p-2 rounded-lg hover:bg-foreground/4 transition-colors group"
+      //                 >
+      //                   <div className="relative w-full xl:w-12 aspect-3/4 rounded-md overflow-hidden shrink-0 ring-1 ring-border">
+      //                     <Image
+      //                       src={related.poster}
+      //                       alt={related.name}
+      //                       fill
+      //                       className="object-cover"
+      //                     />
+      //                   </div>
+      //                   <div className="xl:flex-1 min-w-0 mt-2 xl:mt-0 xl:py-0.5">
+      //                     <h4 className="text-xs xl:text-sm text-foreground/70 group-hover:text-foreground/90 transition-colors line-clamp-2 leading-snug">
+      //                       {related.name}
+      //                     </h4>
+      //                     <p className="text-[10px] xl:text-xs text-foreground/30 mt-1">
+      //                       {related.episodes?.sub ||
+      //                         related.episodes?.dub ||
+      //                         "?"}{" "}
+      //                       ep
+      //                     </p>
+      //                   </div>
+      //                 </Link>
+      //               ))}
+      //             </div>
+      //           </div>
+      //         </div>
+      //       )}
+      //     </aside>
+      //   </div>
+      // </div>
