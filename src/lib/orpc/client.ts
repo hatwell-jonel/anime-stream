@@ -4,6 +4,16 @@ import { RouterClient } from '@orpc/server'
 import { DedupeRequestsPlugin } from "@orpc/client/plugins";
 import { TAnimeRouter } from './router';
 
+function isAbortError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const name = "name" in error ? String(error.name) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return (
+    name === "AbortError" ||
+    message.toLowerCase().includes("signal is aborted")
+  );
+}
+
 function getBaseUrl() {
   if (typeof window !== "undefined") {
     return window.location.origin;
@@ -34,7 +44,8 @@ const link = new RPCLink({
     ],
     interceptors: [
         onError((error) => {
-        console.error(error)
+            if (isAbortError(error)) return;
+            console.error(error)
         })
     ],
 })
