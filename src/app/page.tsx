@@ -1,5 +1,8 @@
 'use client'
 
+import { getProxyUrl } from '@/lib/proxy';
+import { orpc } from '@/lib/tanstackquery/orpc';
+import { useQuery } from '@tanstack/react-query';
 import  Header  from '~/features/Header'
 import Hero from '~/features/Hero'
 

@@ -18,9 +18,23 @@ export default function Hero() {
         orpc.anime.getHomePage.queryOptions({}),
     );
 
+    console.log(homeData?.latestEpisodeAnimes);
+
     const spotlightAnimes = homeData?.spotlightAnimes ?? []
 
     if (!spotlightAnimes.length) return null
+
+
+    if (homeLoading) {
+        return (
+            <div className="relative w-full h-screen md:h-175 overflow-hidden group">
+                <div className="absolute inset-0 bg-cover bg-center bg-no-repeat">
+                    <div className="absolute inset-0 bg-linear-to-r from-black via-black/70 to-transparent z-10" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent z-10" />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <section 
