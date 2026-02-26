@@ -3,16 +3,39 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 import { Search, Menu, Bell, User } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
 
-function NavLink({ href, children }: React.PropsWithChildren<{ href: string }>) {
+function NextLink({ href, children }: React.PropsWithChildren<{ href: string }>) {
+    const pathname = usePathname()
+ 
     return (
-        <Link href={href} className="text-sm font-medium hover:text-primary transition">
+        <Link 
+            href={href} 
+            className={
+                cn(
+                    "text-sm font-medium hover:text-primary transition",
+                    pathname === href && "text-red-500 transition-colors font-bold "
+                )
+            }
+        >
             {children}
         </Link>
+    )
+}
+
+function NavLink() {
+    return (
+        <>
+            <NextLink href="/">Home</NextLink>
+            <NextLink href="/upcoming">Upcoming</NextLink>
+            <NextLink href="#">Categories</NextLink>
+            <NextLink href="#">My List</NextLink>
+        </>
     )
 }
 
@@ -34,10 +57,7 @@ export default function Header() {
 
                 {/* Navigation - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-8">
-                    <NavLink href="#">Home</NavLink>
-                    <NavLink href="#">Trending</NavLink>
-                    <NavLink href="#">Categories</NavLink>
-                    <NavLink href="#">My List</NavLink>
+                    <NavLink />
                 </div>
 
                 {/* Search - Hidden on mobile */}
@@ -65,10 +85,7 @@ export default function Header() {
             {isMenuOpen && (
                 <div className="md:hidden  px-4 py-4 border-t border-border bg-card">
                     <div className="space-y-3">
-                        <NavLink href="#">Home</NavLink>
-                        <NavLink href="#">Trending</NavLink>
-                        <NavLink href="#">Categories</NavLink>
-                        <NavLink href="#">My List</NavLink>
+                        <NavLink />
                     <div className="relative">
                     <Input 
                         placeholder="Search anime..." 

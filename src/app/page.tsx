@@ -6,14 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import  Header  from '~/features/Header'
 import Hero from '~/features/Hero'
 
-// import { Hero } from '@/components/hero'
-// import { CategorySlider } from '@/components/category-slider'
-// import { AnimeGrid } from '@/components/anime-grid'
-
 export default function Home() {
       return (
             <main className="min-h-screen bg-background text-foreground">
-                  <Header />
                   <Hero />
                   
                   {/* <section className="px-4 md:px-8 py-12 space-y-12">
