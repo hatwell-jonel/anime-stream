@@ -37,3 +37,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 // https://www.npmjs.com/package/aniwatch
+// swiper
+// shadcn
+// orpc
+// typescript
+// nextjs
+// tanstack query

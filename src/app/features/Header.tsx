@@ -21,7 +21,7 @@ export default function Header() {
     const isMobile = useIsMobile()
 
     return (
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-b border-border">
+        <header className="absolute md:sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-b border-border">
             <nav className="flex items-center justify-between px-4 md:px-8 py-4">
 
                 {/* Logo */}
@@ -63,7 +63,7 @@ export default function Header() {
 
             {/* Mobile menu */}
             {isMenuOpen && (
-                <div className="md:hidden px-4 py-4 border-t border-border bg-card">
+                <div className="md:hidden  px-4 py-4 border-t border-border bg-card">
                     <div className="space-y-3">
                         <NavLink href="#">Home</NavLink>
                         <NavLink href="#">Trending</NavLink>
