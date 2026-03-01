@@ -23,13 +23,22 @@ import {
   MediaPlayer,
   MediaProvider,
   Poster,
+  TimeSlider,
   Spinner as VidstackSpinner,
   type MediaPlayerInstance,
 } from "@vidstack/react"
+import {
+  defaultLayoutIcons,
+  DefaultVideoLayout,
+} from "@vidstack/react/player/layouts/default";
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
 import { cn } from '@/lib/utils';
 import SkipButton from './media-player/skip-button';
+import { RemotionPoster } from '@vidstack/react/player/remotion';
+import Image from 'next/image';
+import { PlayerSlider } from './media-player/player-slider';
+
 
 
 interface PageProps {
@@ -80,7 +89,6 @@ function WatchBreadcrumb(data: WatchBreadcrumbProps) {
   );
 }
 
-
 function WatchPage({ params }: PageProps) {
 
   const playerRef = useRef<MediaPlayerInstance>(null);
@@ -90,6 +98,9 @@ function WatchPage({ params }: PageProps) {
     orpc.anime.getAnimeAboutInfo.queryOptions({ input: { animeId } }),
   );
   const {info, moreInfo} = currentAnime?.anime ?? {};
+  console.log('info', info);
+
+  console.log(info?.poster)
 
   // const { data: currentAnimeEpisode  } = useQuery(
   //   orpc.anime.getAnimeEpisodes.queryOptions({ input: { animeId } }),
@@ -107,14 +118,13 @@ function WatchPage({ params }: PageProps) {
           orpc.anime.getAnimeEpisodeSources.queryOptions({
                 input: {
                       episodeId: "one-piece-100?ep=2142",
-                      server: "hd-2",
+                      server: "hd-1",
                       category: "sub",
                 },
           }),
     );
-    console.log("episodeSourcesData", episodeSourcesData);
     const streamingSources = episodeSourcesData?.sources ?? [];
-
+    // console.log("episodeSourcesData", episodeSourcesData);
 
   // const { data: sourcesData, isLoading: sourcesLoading } = useQuery({
   //   ...orpc.anime.getAnimeEpisodeSources.queryOptions({
@@ -170,7 +180,6 @@ function WatchPage({ params }: PageProps) {
                         src: getProxyUrl(streamingSources[0]?.url),
                         type: "application/x-mpegurl",
                       }}
-                      controls
                       playsInline
                       viewType="video"
                       streamType="on-demand"
@@ -184,14 +193,15 @@ function WatchPage({ params }: PageProps) {
                       // onTextTrackChange={onTextTrackChange}
                       // onEnded={onEnded}
                       // onSeeked={onSeeked}
-                      className="w-full h-full"
+                      className="w-full h-full [--media-slider-track-fill-bg:var(--color-red-500)]"
                     >
 
                       <MediaProvider >
                         <Poster
                           className="vds-poster object-cover object-center"
+                          // className="absolute inset-0 block h-full w-full bg-black rounded-md opacity-0 transition-opacity data-visible:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
                           src={getProxyUrl(String(info?.poster))}
-                          alt={`${info?.name} - EP: ${episodeId}`}
+                          alt={info?.name ?? "Poster"}
                         />
                       </MediaProvider>
 
@@ -202,7 +212,7 @@ function WatchPage({ params }: PageProps) {
                         showSkip={true}
                       />
 
-                      {/* {subtitles.map((subtitle, index) => {
+                      {/* { .map((subtitle, index) => {
                         const isPreferredLang = preferences.captionLanguage
                           ? subtitle.lang
                               .toLowerCase()
@@ -224,51 +234,52 @@ function WatchPage({ params }: PageProps) {
                           />
                         );
                       })} */}
-                      {/* <SkipButton intro={intro} outro={outro} autoSkip={preferences.autoSkip} />
-                      {showCountdown && nextEpisode && (
+                      {/* {showCountdown && nextEpisode && (
                         <NextEpisodeCountdown
                           nextEpisode={nextEpisode}
                           onCancel={cancelCountdown}
                           onPlayNow={navigateToNext}
                         />
-                      )}
+                      )} */}
+
                       <DefaultVideoLayout
                         icons={defaultLayoutIcons}
-                        thumbnails={
-                          thumbnailTrack
-                            ? getProxyUrl(thumbnailTrack.url)
-                            : undefined
-                        }
+                        // thumbnails={
+                        //   thumbnailTrack
+                        //     ? getProxyUrl(thumbnailTrack.url)
+                        //     : undefined
+                        // }
                         slots={{
-                          playbackMenuItemsEnd: (
-                            <>
-                              <MenuToggle
-                                label="Auto Skip Intro/Outro"
-                                checked={preferences.autoSkip}
-                                onChange={(checked) =>
-                                  updatePreferences({ autoSkip: checked })
-                                }
-                              />
-                              <MenuToggle
-                                label="Auto Play Next Episode"
-                                checked={preferences.autoNextEpisode}
-                                onChange={(checked) =>
-                                  updatePreferences({ autoNextEpisode: checked })
-                                }
-                              />
-                            </>
-                          ),
+                          // playbackMenuItemsEnd: (
+                          //   <>
+                          //     <MenuToggle
+                          //       label="Auto Skip Intro/Outro"
+                          //       checked={preferences.autoSkip}
+                          //       onChange={(checked) =>
+                          //         updatePreferences({ autoSkip: checked })
+                          //       }
+                          //     />
+                          //     <MenuToggle
+                          //       label="Auto Play Next Episode"
+                          //       checked={preferences.autoNextEpisode}
+                          //       onChange={(checked) =>
+                          //         updatePreferences({ autoNextEpisode: checked })
+                          //       }
+                          //     />
+                          //   </>
+                          // ),
+                          timeSlider: <PlayerSlider />,
                         }}
-                      /> */}
+                      />
                     </MediaPlayer>
                   ) : (
                     <>
-                      {/* <Image
-                        src={info.poster}
-                        alt={`${info.name} Episode ${currentEpisode}`}
+                      <Image
+                        src={String(info?.poster)}
+                        alt={`${String(info?.name)}`}
                         fill
                         className="object-cover opacity-30 blur-sm"
-                      /> */}
+                      />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <div className="w-16 h-16 rounded-full border border-border flex items-center justify-center mx-auto mb-4">
@@ -290,7 +301,7 @@ function WatchPage({ params }: PageProps) {
                             Video unavailable
                           </p>
                           <p className="text-foreground/30 text-xs">
-                            Try selecting a different server
+                            Try to select different server
                           </p>
                         </div>
                       </div>
