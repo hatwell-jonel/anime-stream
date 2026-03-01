@@ -20,10 +20,12 @@ import { getProxyUrl } from '@/lib/proxy';
 import { Spinner } from '@/components/ui/spinner';
 
 import {
+  Captions,
   MediaPlayer,
   MediaProvider,
   Poster,
   TimeSlider,
+  Track,
   Spinner as VidstackSpinner,
   type MediaPlayerInstance,
 } from "@vidstack/react"
@@ -98,9 +100,6 @@ function WatchPage({ params }: PageProps) {
     orpc.anime.getAnimeAboutInfo.queryOptions({ input: { animeId } }),
   );
   const {info, moreInfo} = currentAnime?.anime ?? {};
-  console.log('info', info);
-
-  console.log(info?.poster)
 
   // const { data: currentAnimeEpisode  } = useQuery(
   //   orpc.anime.getAnimeEpisodes.queryOptions({ input: { animeId } }),
@@ -118,13 +117,18 @@ function WatchPage({ params }: PageProps) {
           orpc.anime.getAnimeEpisodeSources.queryOptions({
                 input: {
                       episodeId: "one-piece-100?ep=2142",
-                      server: "hd-1",
+                      server: "hd-2",
                       category: "sub",
                 },
           }),
     );
     const streamingSources = episodeSourcesData?.sources ?? [];
-    // console.log("episodeSourcesData", episodeSourcesData);
+    console.log("episodeSourcesData", episodeSourcesData?.tracks);
+
+    const allTracks = episodeSourcesData?.tracks ?? [];
+    const thumbnailTrack = allTracks.find((t) => t.lang.toLowerCase() === "thumbnails");
+    console.log("thumbnailTrack", thumbnailTrack);
+    const subtitles = allTracks.filter((t) => t.lang.toLowerCase() !== "thumbnails");
 
   // const { data: sourcesData, isLoading: sourcesLoading } = useQuery({
   //   ...orpc.anime.getAnimeEpisodeSources.queryOptions({
@@ -199,7 +203,6 @@ function WatchPage({ params }: PageProps) {
                       <MediaProvider >
                         <Poster
                           className="vds-poster object-cover object-center"
-                          // className="absolute inset-0 block h-full w-full bg-black rounded-md opacity-0 transition-opacity data-visible:opacity-100 [&>img]:h-full [&>img]:w-full [&>img]:object-cover"
                           src={getProxyUrl(String(info?.poster))}
                           alt={info?.name ?? "Poster"}
                         />
@@ -208,32 +211,23 @@ function WatchPage({ params }: PageProps) {
                       <SkipButton 
                         intro={episodeSourcesData?.intro ?? null} 
                         outro={episodeSourcesData?.outro ?? null}
-                        // autoSkip={preferences.autoSkip}
                         showSkip={true}
                       />
 
-                      {/* { .map((subtitle, index) => {
-                        const isPreferredLang = preferences.captionLanguage
-                          ? subtitle.lang
-                              .toLowerCase()
-                              .includes(
-                                preferences.captionLanguage.toLowerCase(),
-                              )
-                          : false;
-                        const isDefault = preferences.captionLanguage
-                          ? isPreferredLang
-                          : index === 0;
-                        return (
-                          <Track
-                            key={`${subtitle.lang}-${index}`}
-                            src={getProxyUrl(subtitle.url)}
-                            kind="subtitles"
-                            label={subtitle.lang}
-                            language={subtitle.lang.toLowerCase().slice(0, 2)}
-                            default={isDefault}
-                          />
-                        );
-                      })} */}
+                      {
+                        subtitles?.map((subtitle) => {
+                          return (
+                            <Track
+                              key={`${subtitle.url}`}
+                              src={getProxyUrl(subtitle.url)}
+                              kind="subtitles"
+                              label={subtitle.lang}
+                              language={subtitle.lang.toLowerCase().slice(0, 2)}
+                              default={false}
+                            />
+                          )
+                        })
+                      }
                       {/* {showCountdown && nextEpisode && (
                         <NextEpisodeCountdown
                           nextEpisode={nextEpisode}
@@ -244,31 +238,13 @@ function WatchPage({ params }: PageProps) {
 
                       <DefaultVideoLayout
                         icons={defaultLayoutIcons}
-                        // thumbnails={
-                        //   thumbnailTrack
-                        //     ? getProxyUrl(thumbnailTrack.url)
-                        //     : undefined
-                        // }
+                        thumbnails={
+                          thumbnailTrack
+                            ? getProxyUrl(thumbnailTrack.url)
+                            : undefined
+                        }
                         slots={{
-                          // playbackMenuItemsEnd: (
-                          //   <>
-                          //     <MenuToggle
-                          //       label="Auto Skip Intro/Outro"
-                          //       checked={preferences.autoSkip}
-                          //       onChange={(checked) =>
-                          //         updatePreferences({ autoSkip: checked })
-                          //       }
-                          //     />
-                          //     <MenuToggle
-                          //       label="Auto Play Next Episode"
-                          //       checked={preferences.autoNextEpisode}
-                          //       onChange={(checked) =>
-                          //         updatePreferences({ autoNextEpisode: checked })
-                          //       }
-                          //     />
-                          //   </>
-                          // ),
-                          timeSlider: <PlayerSlider />,
+                          // timeSlider: <PlayerSlider />,
                         }}
                       />
                     </MediaPlayer>
