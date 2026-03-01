@@ -23,10 +23,13 @@ import {
   MediaPlayer,
   MediaProvider,
   Poster,
+  Spinner as VidstackSpinner,
   type MediaPlayerInstance,
 } from "@vidstack/react"
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
+import { cn } from '@/lib/utils';
+import SkipButton from './media-player/skip-button';
 
 
 interface PageProps {
@@ -34,13 +37,13 @@ interface PageProps {
 }
 
 interface WatchBreadcrumbProps {
-  id: string;
-  episode: string;
+  animeId: string;
+  animeName: string;
+  episodeId: string;
 }
 
 
 function WatchBreadcrumb(data: WatchBreadcrumbProps) {
-  
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -58,8 +61,8 @@ function WatchBreadcrumb(data: WatchBreadcrumbProps) {
         {/* Anime Page */}
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href={`/anime/${data.id}`}>
-              {data.id}
+            <Link href={`/anime/${data.animeId}`}>
+              {data.animeName}
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
@@ -69,7 +72,7 @@ function WatchBreadcrumb(data: WatchBreadcrumbProps) {
         {/* Current Episode */}
         <BreadcrumbItem>
           <BreadcrumbPage>
-            EP {data.episode}
+            EP {data.episodeId}
           </BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
@@ -81,14 +84,15 @@ function WatchBreadcrumb(data: WatchBreadcrumbProps) {
 function WatchPage({ params }: PageProps) {
 
   const playerRef = useRef<MediaPlayerInstance>(null);
-  const resolvedParams = use(params);
+  const {id : animeId, episode : episodeId} = use(params);
 
-  // const { data: currentAnime, isLoading: isCurrentAnimeLoading } = useQuery(
-  //   orpc.anime.getAnimeAboutInfo.queryOptions({ input: { animeId: resolvedParams.id } }),
-  // );
+  const { data: currentAnime } = useQuery(
+    orpc.anime.getAnimeAboutInfo.queryOptions({ input: { animeId } }),
+  );
+  const {info, moreInfo} = currentAnime?.anime ?? {};
 
-  // const { data: currentAnimeEpisode, isLoading: isCurrentAnimeEpisodeLoading } = useQuery(
-  //   orpc.anime.getAnimeEpisodes.queryOptions({ input: { animeId: resolvedParams.id } }),
+  // const { data: currentAnimeEpisode  } = useQuery(
+  //   orpc.anime.getAnimeEpisodes.queryOptions({ input: { animeId } }),
   // );
 
   // const allEpisodes = useMemo(() => currentAnimeEpisode?.episodes ?? [], [currentAnimeEpisode?.episodes]);
@@ -128,11 +132,20 @@ function WatchPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <WatchBreadcrumb   id={resolvedParams.id} episode={resolvedParams.episode}  />
+      {/* Main Layout */}
+      <div className={cn(
+          "flex justify-center",
+          "min-h-screen",
+          "pt-14 md:pt-16 pb-6 md:pb-8 px-4 md:px-6",
+      )}>
+        <div className="flex flex-col gap-2 w-full max-w-325">
 
-          {/* Main Layout */}
-      <div className="min-h-screen pt-14 md:pt-16 pb-6 md:pb-8 px-4 md:px-6 flex justify-center">
-        <div className="flex flex-col xl:flex-row gap-0 xl:gap-6 w-full max-w-[1300px]">
+          <WatchBreadcrumb   
+            animeId={animeId} 
+            animeName={info?.name ?? ""}
+            episodeId={episodeId} 
+          />
+
           {/* Video Area */}
           <main className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col w-full">
@@ -143,7 +156,7 @@ function WatchPage({ params }: PageProps) {
                   {episodeSourcesLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/80">
                       <div className="flex flex-col items-center gap-4">
-                        <Spinner className="size-8 text-foreground/30" />
+                        <Spinner className="size-8 text-red-500" />
                         <p className="text-sm text-foreground/40">
                           Loading stream...
                         </p>
@@ -158,10 +171,10 @@ function WatchPage({ params }: PageProps) {
                         type: "application/x-mpegurl",
                       }}
                       controls
-                      // viewType="video"
-                      // streamType="on-demand"
-                      // playsInline
-                      // crossOrigin="anonymous"
+                      playsInline
+                      viewType="video"
+                      streamType="on-demand"
+                      crossOrigin="anonymous"
                       // autoPlay={preferences.autoplay}
                       // onProviderChange={onProviderChange}
                       // onCanPlay={onCanPlay}
@@ -173,13 +186,22 @@ function WatchPage({ params }: PageProps) {
                       // onSeeked={onSeeked}
                       className="w-full h-full"
                     >
-                      <MediaProvider />
-                        {/* <Poster
+
+                      <MediaProvider >
+                        <Poster
                           className="vds-poster object-cover object-center"
-                          src={getProxyUrl(info.poster)}
-                          alt={`image`}
+                          src={getProxyUrl(String(info?.poster))}
+                          alt={`${info?.name} - EP: ${episodeId}`}
                         />
-                      </MediaProvider> */}
+                      </MediaProvider>
+
+                      <SkipButton 
+                        intro={episodeSourcesData?.intro ?? null} 
+                        outro={episodeSourcesData?.outro ?? null}
+                        // autoSkip={preferences.autoSkip}
+                        showSkip={true}
+                      />
+
                       {/* {subtitles.map((subtitle, index) => {
                         const isPreferredLang = preferences.captionLanguage
                           ? subtitle.lang

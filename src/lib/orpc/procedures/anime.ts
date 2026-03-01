@@ -186,7 +186,12 @@ export const getEpisodeServers = os.input(episodeIdSchema).handler(async ({input
     return data;
 });
 
-export const getAnimeEpisodeSources = os.input(episodeSourcesSchema).handler(async ({input}) : Promise<HiAnime.ScrapedAnimeEpisodesSources> => {
+type ExtendedEpisodeSources = HiAnime.ScrapedAnimeEpisodesSources & {
+    intro?: { start: number; end: number } | null;
+    outro?: { start: number; end: number } | null;
+};
+
+export const getAnimeEpisodeSources = os.input(episodeSourcesSchema).handler(async ({input}) : Promise<ExtendedEpisodeSources> => {
     const data = await hianime.getEpisodeSources(input.episodeId);
     return data;
 });
