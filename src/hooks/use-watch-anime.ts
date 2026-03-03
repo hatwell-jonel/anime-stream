@@ -27,6 +27,13 @@ function useWatchAnime(data : UseWatchAnimeProps) {
         staleTime: 5 * MINUTE,
     });
 
+    const animeQtipInfo = useQuery({
+        ...orpc.anime.getQtipInfo.queryOptions({
+            input: { animeId },
+        }),
+        staleTime: 5 * MINUTE,
+    });
+
     const currentAnimeEpisode = useQuery({
         ...orpc.anime.getAnimeEpisodes.queryOptions({
             input: { animeId },
@@ -82,6 +89,7 @@ function useWatchAnime(data : UseWatchAnimeProps) {
     }, [episodeSources.data]);
 
     return {
+        animeQtipInfo,
         currentAnime,
         currentAnimeEpisode,
         episodeServers,

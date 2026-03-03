@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Logo from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { Search, Menu, Bell, User } from 'lucide-react'
@@ -33,7 +34,7 @@ function NavLink() {
         <>
             <NextLink href="/">Home</NextLink>
             <NextLink href="/upcoming">Upcoming</NextLink>
-            <NextLink href="#">Categories</NextLink>
+            <NextLink href="#">Browse</NextLink>
             <NextLink href="#">My List</NextLink>
         </>
     )
@@ -48,12 +49,8 @@ export default function Header() {
             <nav className="flex items-center justify-between px-4 md:px-8 py-4">
 
                 {/* Logo */}
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary to-accent flex items-center justify-center">
-                        <span className="font-bold text-accent-foreground text-lg">A</span>
-                    </div>
-                    <span className="font-bold text-xl hidden md:inline">AnimeHub</span>
-                </div>
+                <Logo />
+         
 
                 {/* Navigation - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-8">

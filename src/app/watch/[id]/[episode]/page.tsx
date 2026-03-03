@@ -98,6 +98,7 @@ function WatchPage({ params }: PageProps) {
 
   const { 
     currentAnime,
+    animeQtipInfo,
     episodeServers,
     episodeSources,
     streamingSources,
@@ -110,7 +111,25 @@ function WatchPage({ params }: PageProps) {
     selectedServer,
   });
 
-  const { info } = currentAnime.data?.anime ?? {};
+  if (currentAnime.isLoading || animeQtipInfo.isLoading ) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner className="size-8 text-red-500" />
+      </div>
+    );
+  }
+
+  if (!currentAnime.data?.anime?.info || !animeQtipInfo.data?.anime) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-foreground/60">Anime info not found.</p>
+      </div>
+    );
+  }
+
+  const { relatedAnimes, seasons } = currentAnime.data;
+  const { info } = currentAnime.data.anime;
+  const { anime } = animeQtipInfo.data;
   const subServers = episodeServers.data?.sub ?? [];
   const dubServers = episodeServers.data?.dub ?? [];
 
@@ -130,12 +149,10 @@ function WatchPage({ params }: PageProps) {
             episodeId={episodeId} 
           />
 
-          {/* Video Area */}
           <main className="flex-1 flex flex-col">
-            <div className="flex-1 flex flex-col w-full">
 
               {/* Video Player */}
-              <div className="relative rounded-lg md:rounded-2xl overflow-hidden">
+              <section className="relative rounded-lg md:rounded-2xl overflow-hidden ">
                 <div className="aspect-video relative">
                   {episodeSources.isLoading ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/80">
@@ -243,10 +260,10 @@ function WatchPage({ params }: PageProps) {
                     </>
                   )}
                 </div>
-              </div>
+              </section>
 
               {/* Server Selection */}
-              <div className="mt-4 md:mt-6 p-3 md:p-4 rounded-xl bg-foreground/2 border border-border">
+              <section className="mt-4 md:mt-6 p-3 md:p-4 rounded-xl bg-foreground/2 border border-border">
                 <div className="flex flex-wrap items-center gap-4 md:gap-6">
                   {/* Audio Toggle */}
                   <div className="flex items-center gap-2 md:gap-3">
@@ -310,9 +327,81 @@ function WatchPage({ params }: PageProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
-            </div>
+              {/* Episode Info */}
+              <section className='mt-10'>
+                <div className='flex gap-1'>
+                      <div>
+                          <Image 
+                            src={getProxyUrl(String(info.poster))}
+                            width={150}
+                            height={150}
+                            alt={`${info.name}`}
+                          />
+                      </div>
+                      <div className='px-4  w-full'>
+                        <h3 className='font-bold'>{anime.name}</h3>
+                        <h4>( {anime.jname} )</h4>
+
+                        <ul>
+                          <li className='flex gap-2 text-stone-300'>
+                            <span>Aired:</span>
+                            <span>{anime.aired}</span>
+                          </li>
+                          <li className='flex gap-2 text-stone-300'>
+                            <span>Genres:</span>
+                            <span>{anime.genres.join(", ")}</span>
+                          </li>
+
+                          <li className='flex gap-2 text-stone-300'>
+                            <span>Rating:</span>
+                            <span>{info.stats?.rating}</span>
+                          </li>
+                          <li className='flex gap-2 text-stone-300'>
+                            <span>Quality:</span>
+                            <span>{anime.quality}</span>
+                          </li>
+                          <li className='flex gap-2 text-stone-300'>
+                          <span>Type:</span>
+                          <span>{anime.type}</span>
+                          </li>
+                        </ul>
+                      </div>
+                </div>
+              </section>
+
+              <section className="mt-15">
+                  <div className=" mx-auto max-w-7xl">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        related
+                      </h2>
+                    </div>
+                    <AnimeGrid 
+                      anime={seasons as AnimeItem[]}
+                      isLoading={currentAnime.isLoading} 
+                    />
+                </div>
+
+                <div className="mx-auto max-w-7xl mt-15">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      popular
+                    </h2>
+                    <Link
+                      href="/browse"
+                      className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    >
+                      View all
+                    </Link>
+                  </div>
+                  <AnimeGrid 
+                    anime={relatedAnimes as AnimeItem[]}
+                    isLoading={currentAnime.isLoading} 
+                  />
+                </div>
+              </section>
           </main>
         </div>
       </div>
@@ -340,3 +429,76 @@ function WatchPage({ params }: PageProps) {
 }
 
 export default WatchPage
+
+type AnimeItem = {
+  id: string;
+  name: string;
+  poster: string;
+  type?: string | null;
+  jname?: string | null;
+  episodes?: { sub: number | null; dub: number | null };
+};
+
+
+function AnimeGrid({
+  anime,
+  isLoading,
+}: {
+  anime: AnimeItem[];
+  isLoading?: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Spinner className="size-6 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+      {anime.map((item) => {
+        const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
+
+        return (
+          <Link
+            key={item.id}
+            href={`/anime/${item.id}`}
+            className="group block"
+          >
+            <div className="relative aspect-3/4 rounded-sm overflow-hidden bg-foreground/5 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
+
+              {/* Poster */}
+              <Image
+                src={item.poster}
+                alt={item.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+
+              {/* Episode Badge */}
+              <div className="absolute bottom-2 left-2 text-[14px] px-2 py-1 rounded-md bg-black/70 text-white backdrop-blur-sm">
+                {episodeCount} EP
+              </div>
+
+              {/* Type Badge */}
+              {item.type && (
+                <div className="absolute top-2 right-2 text-[10px] px-2 py-1 rounded-md bg-red-500/75 text-white font-bold">
+                  {item.type}
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="mt-3 text-sm font-medium line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors min-h-10">
+              {item.name}
+            </h3>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
