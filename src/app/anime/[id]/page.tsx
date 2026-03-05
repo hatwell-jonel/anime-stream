@@ -40,7 +40,7 @@ export default function AnimeDetailPage({ params }: PageProps) {
   if (infoLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Spinner className="size-8 text-muted-foreground" />
+        <Spinner className="size-8 text-muted-foreground text-red-500" />
       </div>
     );
   }

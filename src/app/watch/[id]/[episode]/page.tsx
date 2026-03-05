@@ -431,7 +431,7 @@ const filteredEpisodes = useMemo(() => {
                     </div>
                     <div className='px-4 w-full'>
 
-                      <div className='flex items-center gap-3 mb-2'>
+                      <div className='gap-3 mb-2'>
                         <h3 className='font-bold text-2xl'>{anime.name}</h3>
                         <h4 className='text-xl'>( {anime.jname} )</h4>
                       </div>
@@ -533,23 +533,23 @@ const filteredEpisodes = useMemo(() => {
                                 </Link>
                               );
                             })}
-
-                            <div className="flex items-center gap-4 my-2">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 rounded bg-red-500" />
-                                <span className="text-[10px] text-foreground/40">
-                                  Current
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 rounded bg-amber-500/30" />
-                                <span className="text-[10px] text-foreground/40">
-                                  Filler
-                                </span>
-                              </div>
-                            </div>
                           </div>
+                          
                         )}
+                        <div className="flex items-center gap-4 my-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded bg-red-500" />
+                            <span className="text-[10px] text-foreground/40">
+                              Current
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded bg-amber-500/30" />
+                            <span className="text-[10px] text-foreground/40">
+                              Filler
+                            </span>
+                          </div>
+                        </div>
                       </div>  
                     </div>
                   </div>

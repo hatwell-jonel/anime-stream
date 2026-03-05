@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 type DateObj = {
     date: Date;
@@ -15,17 +16,21 @@ type DateObj = {
     dayNum: string;
 }
 
-function getCurrentSevenDays() : DateObj[] {
-    const dates = [];
+function getCurrentSevenDays(): DateObj[] {
+    const dates: DateObj[] = [];
     const today = new Date();
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = -1; i < 6; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
 
         let label: string;
         let shortLabel: string;
-        if (i === 0) {
+
+        if (i === -1) {
+            label = "Yesterday";
+            shortLabel = "Yes";
+        } else if (i === 0) {
             label = "Today";
             shortLabel = "Today";
         } else if (i === 1) {
@@ -37,11 +42,11 @@ function getCurrentSevenDays() : DateObj[] {
         }
 
         dates.push({
-            date,
-            label,
-            shortLabel,
-            dateStr: formatDate(date),
-            dayNum: date.getDate().toString(),
+        date,
+        label,
+        shortLabel,
+        dateStr: formatDate(date),
+        dayNum: date.getDate().toString(),
         });
     }
 
@@ -75,7 +80,7 @@ function NoContent() {
 
 function Upcoming() {
     const weekDates = useMemo(() => getCurrentSevenDays(), [])
-    const [selectedDate, setSelectedDate] = useState<DateObj>(weekDates[0])
+    const [selectedDate, setSelectedDate] = useState<DateObj>(weekDates[1])
 
     const { data: upcomingData, isLoading } = useQuery(
         orpc.anime.getEstimatedSchedule.queryOptions({
@@ -87,31 +92,51 @@ function Upcoming() {
     return (
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-            <div className="my-12 px-4 lg:px-8">
-                <h1 className="text-4xl md:text-5xl font-black text-white mb-3">Upcoming Anime</h1>
-                <p className="text-gray-400 text-lg">Discover exciting anime coming soon to AnimeHub</p>
+            <div className="my-14">
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+                    Upcoming Anime
+                </h1>
+                <p className="text-muted-foreground mt-3 max-w-2xl">
+                    Stay updated with scheduled anime episode releases.
+                </p>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto mb-6 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                {weekDates.map((d) => (
-                    <button
+            <div className="relative mb-8">
+                <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar">
+                    {weekDates.map((d) => {
+                    const isActive = d.dateStr === selectedDate.dateStr;
+
+                    return (
+                        <button
                         key={d.dateStr}
                         onClick={() => setSelectedDate(d)}
-                        className={`px-4 py-2 rounded-lg min-w-20 text-center font-semibold transition-colors cursor-pointer ${
-                        d.dateStr === selectedDate.dateStr
-                            ? 'text-black bg-red-500'
-                            : 'bg-gray-900 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <div className="text-sm">{d.shortLabel}</div>
-                        <div className="text-lg font-bold">{d.dayNum}</div>
-                    </button>
-                ))}
+                        className={`
+                            flex flex-col items-center justify-center
+                            px-4 py-3 min-w-20
+                            rounded-xl transition-all duration-200
+                            border
+                            ${
+                            isActive
+                                ? "bg-red-500 text-background"
+                                : "bg-foreground/5 text-foreground/60 border-transparent hover:bg-foreground/10"
+                            }
+                        `}
+                        >
+                            <span className="text-xs font-medium">
+                                {d.shortLabel}
+                            </span>
+                            <span className="text-lg font-bold tabular-nums">
+                                {d.dayNum}
+                            </span>
+                        </button>
+                    );
+                    })}
+                </div>
             </div>
 
             {/* Anime List */}
-            <section className="py-10">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <section>
+                <div className="mx-auto max-w-7xl">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                             {selectedDate?.label}

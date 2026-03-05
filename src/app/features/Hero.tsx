@@ -19,8 +19,6 @@ export default function Hero() {
         orpc.anime.getHomePage.queryOptions({}),
     );
 
-    console.log(homeData?.latestEpisodeAnimes);
-
     const spotlightAnimes = homeData?.spotlightAnimes ?? []
 
     if (!spotlightAnimes.length) return null
@@ -104,28 +102,32 @@ export default function Hero() {
                                 </p>
 
                                 {/* Buttons */}
-                                <div className="flex flex-col sm:flex-row gap- pt-3">
-                                    <Button
-                                        size="lg"
-                                        className="bg-white text-black hover:bg-gray-200 font-bold gap-2"
+                                <div className="flex flex-col sm:flex-row gap-3 pt-3">
+                                    <Link
+                                        href={`/watch/${anime.id}/1`}
+                                        className='flex items-center gap-2'
                                     >
-                                        <Link
-                                            href={`/watch/${anime.id}/1`}
-                                            className='flex items-center gap-2'
+                                        <Button
+                                            size="lg"
+                                            className="bg-white text-black hover:bg-gray-200 font-bold gap-2"
                                         >
-                                            <Play className="w-5 h-5 fill-current" />
-                                            Play
-                                        </Link>
-                                    </Button>
+                                                <Play className="w-5 h-5 fill-current" />
+                                                Play
+                                        </Button>
+                                    </Link>
 
-                                    <Button
-                                        size="lg"
-                                        variant="outline"
-                                        className="border-white text-white hover:bg-white/20 gap-2"
+                                    <Link
+                                        href={`/anime/${anime.id}`}
                                     >
-                                        <Info className="w-5 h-5" />
-                                        More Info
-                                    </Button>
+                                        <Button
+                                            size="lg"
+                                            variant="outline"
+                                            className="border-white text-white font-bold hover:bg-white/20 gap-2"
+                                        >
+                                            <Info className="w-5 h-5" />
+                                            More Info
+                                        </Button>
+                                    </Link>
                                 </div>
 
                                 </div>
