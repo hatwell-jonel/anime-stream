@@ -9,6 +9,10 @@ import { orpc } from "@/lib/tanstackquery/orpc";
 import { useSavedSeries } from "@/hooks/use-save-series";
 import { useWatchProgress } from "@/hooks/use-watch-progress";
 import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Play } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -96,40 +100,48 @@ export default function AnimeDetailPage({ params }: PageProps) {
               {/* Pills */}
               <div className="flex flex-wrap gap-3 mt-6 mb-8">
                 {info.stats?.episodes?.sub && (
-                  <span className="px-3 py-1 rounded-full bg-foreground/5 text-xs">
+                  <Badge variant={'secondary'}>
                     {info.stats.episodes.sub} Episodes
-                  </span>
+                  </Badge>
                 )}
                 {moreInfo.duration && (
-                  <span className="px-3 py-1 rounded-full bg-foreground/5 text-xs">
+                  <Badge variant={'secondary'}>
                     {moreInfo.duration}
-                  </span>
+                  </Badge>
                 )}
                 {moreInfo.studios && (
-                  <span className="px-3 py-1 rounded-full bg-foreground/5 text-xs">
+                  <Badge variant={'secondary'}>
                     {moreInfo.studios}
-                  </span>
+                  </Badge>
                 )}
                 {info.stats?.rating && (
-                  <span className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-xs">
-                    ⭐ {info.stats.rating}
-                  </span>
+                  <Badge className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-xs">
+                    {info.stats.rating}
+                  </Badge>
                 )}
               </div>
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
-                <Link
-                  href={`/watch/${id}/${lastWatched?.episodeNumber ?? 1}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-foreground text-background text-sm font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+                <Button
+                  className={cn(
+                    "bg-transparent text-red-500 border border-red-500",
+                    "hover:bg-red-500/40 hover:text-white  active:bg-red-500/20 active:text-red-500",
+                  )}
+                  size="lg"
                 >
-                  ▶{" "}
-                  {lastWatched
-                    ? `Continue EP ${lastWatched.episodeNumber}`
-                    : "Watch Now"}
-                </Link>
+                  <Link
+                    href={`/watch/${id}/${lastWatched?.episodeNumber ?? 1}`}
+                    className="flex justify-center items-center gap-2"
+                  >
+                      <Play />
+                      {lastWatched
+                        ? `Continue EP ${lastWatched.episodeNumber}`
+                        : "Watch Now"}
+                  </Link>
+                </Button>
 
-                <button
+                <Button
                   onClick={() =>
                     toggleSave({
                       id,
@@ -137,22 +149,25 @@ export default function AnimeDetailPage({ params }: PageProps) {
                       poster: info.poster,
                     })
                   }
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-medium hover:bg-white/10 transition-all"
+                  // className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-medium hover:bg-white/10 transition-all"
+                  size="lg"
+                  className="bg-white"
                 >
                   {isSaved(id) ? "Saved" : "Save"}
-                </button>
+                </Button>
               </div>
 
               {/* Genres */}
               {Array.isArray(moreInfo.genres) && (
                 <div className="flex flex-wrap gap-2 mt-6">
                   {moreInfo.genres.map((genre) => (
-                    <span
+                    <Badge
                       key={genre}
-                      className="px-3 py-1 rounded-full bg-foreground/5 text-xs"
+                      variant={'secondary'}
+                      // className="px-3 py-1 rounded-full bg-foreground/5 text-xs"
                     >
                       {genre}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}

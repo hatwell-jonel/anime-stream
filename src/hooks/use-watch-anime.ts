@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 
 interface UseWatchAnimeProps {
     animeId : string;
-    episodeId: string,
+    episodeId: number,
     selectedCategory: TAnimeAudio,
     selectedServer: TAnimeServer
 }
@@ -41,6 +41,7 @@ function useWatchAnime(data : UseWatchAnimeProps) {
         staleTime: 5 * MINUTE,
     });
 
+    const currentAnimeEpisodeLoading = currentAnimeEpisode.isLoading;
     const allEpisodes = currentAnimeEpisode.data?.episodes ?? [];
     const openedEpisode = allEpisodes.find((ep) => ep.number === Number(episodeId));
     
@@ -92,12 +93,14 @@ function useWatchAnime(data : UseWatchAnimeProps) {
         animeQtipInfo,
         currentAnime,
         currentAnimeEpisode,
+        currentAnimeEpisodeLoading,
         episodeServers,
         episodeSources,
         streamingSources,
         allTracks,
         thumbnailTrack,
-        subtitles
+        subtitles,
+        allEpisodes
     }
 }
 

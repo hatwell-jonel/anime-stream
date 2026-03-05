@@ -2,7 +2,7 @@
 
 import { Home } from 'lucide-react';
 import Link from 'next/link';
-import { use, useRef } from 'react'
+import { use, useMemo, useRef } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { getProxyUrl } from '@/lib/proxy';
 import { Spinner } from '@/components/ui/spinner';
-import { useQueryState, parseAsStringLiteral } from 'nuqs';
+import { useQueryState, parseAsStringLiteral, parseAsInteger } from 'nuqs';
 import {
   MediaPlayer,
   MediaProvider,
@@ -32,15 +32,16 @@ import SkipButton from './media-player/skip-button';
 import Image from 'next/image';
 import useWatchAnime from '@/hooks/use-watch-anime';
 import { animeAudioTypes, animeServers } from '@/types/anime.type';
+import { Button } from '@/components/ui/button';
 
 interface PageProps {
-  params: Promise<{ id: string; episode: string }>;
+  params: Promise<{ id: string; episode: number }>;
 }
 
 interface WatchBreadcrumbProps {
   animeId: string;
   animeName: string;
-  episodeId: string;
+  episodeId: number;
 }
 
 
@@ -96,20 +97,107 @@ function WatchPage({ params }: PageProps) {
     parseAsStringLiteral(animeServers).withDefault("hd-2"),
   );
 
+  const [selectedRange, setSelectedRange] = useQueryState(
+    "range",
+    parseAsInteger.withDefault(0),
+  );
+
   const { 
     currentAnime,
     animeQtipInfo,
+    currentAnimeEpisodeLoading,
     episodeServers,
     episodeSources,
     streamingSources,
     thumbnailTrack,
-    subtitles
+    subtitles,
+    allEpisodes
   } = useWatchAnime({ 
     animeId, 
     episodeId,
     selectedCategory,
     selectedServer,
   });
+
+  const totalEpisodes = allEpisodes.length;
+
+  // /* Generate episode ranges (99 per chunk) */
+  // const episodeRanges = useMemo(() => {
+  //  if (totalEpisodes <= 99)
+  //     return [{ start: 1, end: totalEpisodes, label: "All" }];
+
+  //   const chunkSize = 99;
+  //   const ranges: { start: number; end: number; label: string }[] = [];
+
+  //   for (let i = 0; i < totalEpisodes; i += chunkSize) {
+  //     const start = i + 1;
+  //     const end = Math.min(i + chunkSize, totalEpisodes);
+  //     ranges.push({ start, end, label: `${start}-${end}` });
+  //   }
+
+  //   return ranges;
+  // }, [totalEpisodes]);
+
+  //  /*Auto-select range containing current episode */
+  // const activeRangeIndex = useMemo(() => {
+  //   return episodeRanges.findIndex(
+  //     (range) => episodeId >= range.start && episodeId <= range.end
+  //   );
+  // }, [episodeRanges, episodeId]);
+  
+  // /* Use user-selected range or auto-detected range */
+  // const effectiveRange =
+  //   selectedRange >= 0 && selectedRange < episodeRanges.length
+  //     ? selectedRange
+  //     : Math.max(0, activeRangeIndex);
+
+
+  // const filteredEpisodes = useMemo(() => {
+  //   const range = episodeRanges[effectiveRange];
+  //   if (!range) return allEpisodes;
+  //   return allEpisodes.filter(
+  //     (ep) => ep.number >= range.start && ep.number <= range.end,
+  //   );
+  // }, [allEpisodes, episodeRanges, effectiveRange]);
+
+  const chunkSize = 50;
+
+const episodeRanges = useMemo(() => {
+  if (!totalEpisodes) return [];
+
+  if (totalEpisodes <= chunkSize) {
+    return [{ start: 1, end: totalEpisodes }];
+  }
+
+  const ranges = [];
+  for (let i = 0; i < totalEpisodes; i += chunkSize) {
+    ranges.push({
+      start: i + 1,
+      end: Math.min(i + chunkSize, totalEpisodes),
+    });
+  }
+
+  return ranges;
+}, [totalEpisodes]);
+
+const autoRangeIndex = useMemo(() => {
+  return episodeRanges.findIndex(
+    (r) => episodeId >= r.start && episodeId <= r.end
+  );
+}, [episodeRanges, episodeId]);
+
+const activeRange =
+  selectedRange ?? (autoRangeIndex >= 0 ? autoRangeIndex : 0);
+
+const filteredEpisodes = useMemo(() => {
+  const range = episodeRanges[activeRange];
+  if (!range) return allEpisodes;
+
+  return allEpisodes.filter(
+    (ep) => ep.number >= range.start && ep.number <= range.end
+  );
+}, [allEpisodes, episodeRanges, activeRange]);
+
 
   if (currentAnime.isLoading || animeQtipInfo.isLoading ) {
     return (
@@ -128,11 +216,11 @@ function WatchPage({ params }: PageProps) {
   }
 
   const { relatedAnimes, seasons } = currentAnime.data;
-  const { info } = currentAnime.data.anime;
+  const { info, moreInfo } = currentAnime.data.anime;
   const { anime } = animeQtipInfo.data;
   const subServers = episodeServers.data?.sub ?? [];
   const dubServers = episodeServers.data?.dub ?? [];
-
+  
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Main Layout */}
@@ -331,76 +419,182 @@ function WatchPage({ params }: PageProps) {
 
               {/* Episode Info */}
               <section className='mt-10'>
-                <div className='flex gap-1'>
-                      <div>
-                          <Image 
-                            src={getProxyUrl(String(info.poster))}
-                            width={150}
-                            height={150}
-                            alt={`${info.name}`}
-                          />
-                      </div>
-                      <div className='px-4  w-full'>
-                        <h3 className='font-bold'>{anime.name}</h3>
-                        <h4>( {anime.jname} )</h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className='flex  gap-1'>
+                    <div>
+                        <Image 
+                          src={getProxyUrl(String(info.poster))}
+                          width={300}
+                          height={300}
+                          alt={`${info.name}`}
+                        />
+                    </div>
+                    <div className='px-4 w-full'>
 
-                        <ul>
-                          <li className='flex gap-2 text-stone-300'>
-                            <span>Aired:</span>
-                            <span>{anime.aired}</span>
-                          </li>
-                          <li className='flex gap-2 text-stone-300'>
-                            <span>Genres:</span>
-                            <span>{anime.genres.join(", ")}</span>
-                          </li>
-
-                          <li className='flex gap-2 text-stone-300'>
-                            <span>Rating:</span>
-                            <span>{info.stats?.rating}</span>
-                          </li>
-                          <li className='flex gap-2 text-stone-300'>
-                            <span>Quality:</span>
-                            <span>{anime.quality}</span>
-                          </li>
-                          <li className='flex gap-2 text-stone-300'>
-                          <span>Type:</span>
-                          <span>{anime.type}</span>
-                          </li>
-                        </ul>
+                      <div className='flex items-center gap-3 mb-2'>
+                        <h3 className='font-bold text-2xl'>{anime.name}</h3>
+                        <h4 className='text-xl'>( {anime.jname} )</h4>
                       </div>
+
+                      <ul className='flex flex-col gap-2'>
+                        <li className='text-sm  flex gap-2 text-stone-300'>
+                          <span>Status:</span>
+                          <span>{moreInfo.status}</span>
+                        </li>
+                        <li className='text-sm flex gap-2 text-stone-300'>
+                          <span>Aired:</span>
+                          <span>{anime.aired}</span>
+                        </li>
+                        <li className='text-sm  flex gap-2 text-stone-300'>
+                          <span>Genres:</span>
+                          <span>{anime.genres.join(", ")}</span>
+                        </li>
+
+                        <li className='text-sm flex gap-2 text-stone-300'>
+                          <span>Rating:</span>
+                            <span className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-xs">
+                              {info.stats?.rating}
+                            </span>
+                        </li>
+                        <li className='text-sm  flex gap-2 text-stone-300'>
+                          <span>Quality:</span>
+                          <span>{anime.quality}</span>
+                        </li>
+                        <li className='text-sm  flex gap-2 text-stone-300'>
+                        <span>Type:</span>
+                        <span>{anime.type}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-xl p-4">
+                    <div className="border-b border-border">
+
+                      {/* EPISODES RANGE*/}
+                      <div className="py-3 border-b border-border">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold tracking-wide">
+                            Episodes
+                          </h3>
+                          <span className="text-xs text-muted-foreground">
+                            {totalEpisodes} Episodes
+                          </span>
+                        </div>
+
+                        {episodeRanges.length > 1 && (
+                          <div className="flex items-center flex-wrap gap-2 ">
+                            {episodeRanges.map((range, index) => {
+                              const isActive = activeRange === index;
+
+                              return (
+                                <Button
+                                  key={`${range.start}-${range.end}`}
+                                  onClick={() => setSelectedRange(index)}
+                                  className={cn(
+                                    "px-3 py-1.5 text-xs rounded-md whitespace-nowrap transition-colors",
+                                    isActive
+                                      ? "bg-red-500 text-white font-bold"
+                                      : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10"
+                                  )}
+                                >
+                                  {range.start} – {range.end}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      {/* EPISODES LIST*/}
+                      <div className="mt-4">
+                        {currentAnimeEpisodeLoading ? (
+                          <div className="py-10 flex items-center justify-center">
+                            <Spinner className="size-6 text-foreground/30" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                            {filteredEpisodes.map((ep) => {
+                              const isActive = ep.number == episodeId;
+                              console.log(isActive);
+                              return (
+                                <Link
+                                  key={ep.episodeId}
+                                  href={`/watch/${animeId}/${ep.number}?category=${selectedCategory}&server=${selectedServer}&range=${activeRange}`}
+                                  className={cn(
+                                    "h-10 flex items-center justify-center rounded-lg text-xs font-medium transition-all",
+                                    isActive
+                                      ? "bg-red-500 text-white shadow-md font-bold"
+                                      : ep.isFiller
+                                        ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                        : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10"
+                                  )}
+                                >
+                                  {ep.number}
+                                </Link>
+                              );
+                            })}
+
+                            <div className="flex items-center gap-4 my-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded bg-red-500" />
+                                <span className="text-[10px] text-foreground/40">
+                                  Current
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 rounded bg-amber-500/30" />
+                                <span className="text-[10px] text-foreground/40">
+                                  Filler
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>  
+                    </div>
+                  </div>
                 </div>
               </section>
 
+              
               <section className="mt-15">
-                  <div className=" mx-auto max-w-7xl">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        related
-                      </h2>
-                    </div>
-                    <AnimeGrid 
-                      anime={seasons as AnimeItem[]}
-                      isLoading={currentAnime.isLoading} 
-                    />
-                </div>
-
-                <div className="mx-auto max-w-7xl mt-15">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                      popular
-                    </h2>
-                    <Link
-                      href="/browse"
-                      className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                    >
-                      View all
-                    </Link>
+                {
+                  seasons.length > 0 && (
+                    <div className=" mx-auto max-w-7xl">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                          Seasons
+                        </h2>
+                      </div>
+                      <AnimeGrid 
+                        anime={seasons as AnimeItem[]}
+                        isLoading={currentAnime.isLoading} 
+                      />
                   </div>
-                  <AnimeGrid 
-                    anime={relatedAnimes as AnimeItem[]}
-                    isLoading={currentAnime.isLoading} 
-                  />
-                </div>
+                  )
+                }
+
+                {
+                  relatedAnimes.length > 0 && (
+                    <div className="mx-auto max-w-7xl mt-15">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                          Related
+                        </h2>
+                        <Link
+                          href="/browse"
+                          className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        >
+                          View all
+                        </Link>
+                      </div>
+                      <AnimeGrid 
+                        anime={relatedAnimes as AnimeItem[]}
+                        isLoading={currentAnime.isLoading} 
+                      />
+                    </div>
+                  )
+                }
               </section>
           </main>
         </div>
@@ -455,14 +649,17 @@ function AnimeGrid({
     );
   }
 
+  const uniqueAnime = Array.from(
+    new Map(anime.map((item) => [item.id, item])).values()
+  );
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-      {anime.map((item) => {
+      {uniqueAnime.map((item) => {
         const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
-
         return (
           <Link
-            key={item.id}
+            key={`${item.id}-${item.name}`}
             href={`/anime/${item.id}`}
             className="group block"
           >
