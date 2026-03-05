@@ -180,7 +180,7 @@ export default function AnimeDetailPage({ params }: PageProps) {
       <section className="py-12 px-4">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-3 gap-10">
           {/* Synopsis */}
-          <div className="lg:col-span-2 z-50">
+          <div className="lg:col-span-2 z-40">
             <div className="bg-foreground/2 rounded-2xl p-6 border border-border">
               <h2 className="text-sm font-medium text-muted-foreground uppercase mb-4">
                 Synopsis

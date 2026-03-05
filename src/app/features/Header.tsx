@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input'
 import Logo from '@/components/ui/Logo'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import { Search, Menu, Bell, User } from 'lucide-react'
+import { Menu, Bell, User, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import SearchAnime from './SearchAnime'
 
 
 function NextLink({ href, children }: React.PropsWithChildren<{ href: string }>) {
@@ -60,11 +61,12 @@ export default function Header() {
                 {/* Search - Hidden on mobile */}
                 <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
                 <div className="relative w-full">
-                    <Input 
+                    <SearchAnime />
+                    {/* <Input 
                     placeholder="Search anime..." 
                     className="pl-10 bg-secondary text-foreground border-0"
                     />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" /> */}
                 </div>
                 </div>
 
