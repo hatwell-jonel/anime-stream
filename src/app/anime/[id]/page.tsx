@@ -145,8 +145,8 @@ export default function AnimeDetailPage({ params }: PageProps) {
                   onClick={() =>
                     toggleSave({
                       id,
-                      name: info.name,
-                      poster: info.poster,
+                      name: String(info.name),
+                      poster: String(info.poster),
                     })
                   }
                   // className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-medium hover:bg-white/10 transition-all"
@@ -204,13 +204,13 @@ export default function AnimeDetailPage({ params }: PageProps) {
                 <InfoRow label="Status" value={String(moreInfo.status)} />
               )}
               {moreInfo.aired && (
-                <InfoRow label="Aired" value={moreInfo.aired} />
+                <InfoRow label="Aired" value={String(moreInfo.aired)} />
               )}
               {moreInfo.duration && (
                 <InfoRow label="Duration" value={String(moreInfo.duration)} />
               )}
               {moreInfo.studios && (
-                <InfoRow label="Studio" value={moreInfo.studios} />
+                <InfoRow label="Studio" value={String(moreInfo.studios)} />
               )}
               {moreInfo.malscore && (
                 <InfoRow label="MAL Score" value={String(moreInfo.malscore)} />
