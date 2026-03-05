@@ -117,7 +117,7 @@ function Upcoming() {
                             border
                             ${
                             isActive
-                                ? "bg-red-500 text-background"
+                                ? "bg-red-500 text-white"
                                 : "bg-foreground/5 text-foreground/60 border-transparent hover:bg-foreground/10"
                             }
                         `}
