@@ -24,7 +24,7 @@ const link = new RPCLink({
         },
       ],
     }),
-  ],
+  ], 
   interceptors: [
     onError((error) => {
       console.error("[oRPC Error]:", error);
@@ -34,7 +34,7 @@ const link = new RPCLink({
 
 export const orpcClient: RouterClient<TAnimeRouter> = createORPCClient(link);
 
-export type RouterOutputs = InferClientOutputs<RouterClient<AppRouter>>;
+export type RouterOutputs = InferClientOutputs<RouterClient<TAnimeRouter>>;
 
 
 // import { createORPCClient, onError } from '@orpc/client'
