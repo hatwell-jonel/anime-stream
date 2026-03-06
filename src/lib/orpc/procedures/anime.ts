@@ -1,5 +1,6 @@
+import { getAniwatchScraper } from "@/lib/aniwatch";
 import { os } from "@orpc/server";
-import { HiAnime } from "aniwatch";
+import type { HiAnime } from "aniwatch";
 import * as z from "zod";
 
 // SCHEMAS
@@ -119,7 +120,7 @@ const episodeSourcesSchema = z.object({
 });
 // =============================================================================
 
-const hianime = new HiAnime.Scraper();
+const hianime = getAniwatchScraper();
 
 export const getHomePage = os.handler(async () : Promise<HiAnime.ScrapedHomePage> => {
     const data = await hianime.getHomePage();

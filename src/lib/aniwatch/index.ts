@@ -1,17 +1,10 @@
-import { HiAnime, HiAnimeError } from "aniwatch";
+import { HiAnime } from "aniwatch";
 
 let scraperInstance: HiAnime.Scraper | null = null;
 
-
-export function hiAnimeScraper(): HiAnime.Scraper {
-    if (!scraperInstance) {
-        try {
-            scraperInstance = new HiAnime.Scraper();
-        } catch (error) {
-            console.error(error instanceof HiAnimeError, error);
-            throw new Error("Scraper initialization failed: " + error);
-        }
-    }
-
-    return scraperInstance;
+export function getAniwatchScraper(): HiAnime.Scraper {
+  if (!scraperInstance) {
+    scraperInstance = new HiAnime.Scraper();
+  }
+  return scraperInstance;
 }
