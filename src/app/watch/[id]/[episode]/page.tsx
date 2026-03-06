@@ -515,7 +515,6 @@ const filteredEpisodes = useMemo(() => {
                           <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
                             {filteredEpisodes.map((ep) => {
                               const isActive = ep.number == episodeId;
-                              console.log(isActive);
                               return (
                                 <Link
                                   key={ep.episodeId}
