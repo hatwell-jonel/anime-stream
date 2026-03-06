@@ -1,6 +1,7 @@
 import { HiAnime, HiAnimeError } from "aniwatch";
 
-let scraperInstance: HiAnime.Scraper | undefined;
+let scraperInstance: HiAnime.Scraper | null = null;
+
 
 export function hiAnimeScraper(): HiAnime.Scraper {
     if (!scraperInstance) {
