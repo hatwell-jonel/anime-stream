@@ -34,8 +34,8 @@ function NavLink() {
     return (
         <>
             <NextLink href="/">Home</NextLink>
-            <NextLink href="/upcoming">Upcoming</NextLink>
             <NextLink href="/library">Library</NextLink>
+            <NextLink href="/upcoming">Upcoming</NextLink>
             <NextLink href="/my-list">My List</NextLink>
         </>
     )
@@ -51,7 +51,6 @@ export default function Header() {
 
                 {/* Logo */}
                 <Logo />
-         
 
                 {/* Navigation - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-8">
@@ -62,11 +61,6 @@ export default function Header() {
                 <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
                 <div className="relative w-full">
                     <SearchAnime />
-                    {/* <Input 
-                    placeholder="Search anime..." 
-                    className="pl-10 bg-secondary text-foreground border-0"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" /> */}
                 </div>
                 </div>
 
