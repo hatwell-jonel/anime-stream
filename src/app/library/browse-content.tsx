@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { orpc } from "@/lib/tanstackquery/orpc";
 import AnimeCard from "@/components/ui/anime-card";
 import { Fragment } from "react/jsx-runtime";
+import { ChevronDown } from "lucide-react";
 
 const categories = [
     { id: "most-popular", label: "Popular" },
@@ -126,7 +127,7 @@ export function BrowseContent() {
                                 <button
                                     onClick={() => fetchNextPage()}
                                     disabled={isFetchingNextPage}
-                                    className="cursor-pointer px-7 py-2.5 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-60"
+                                    className="cursor-pointer px-7 py-2.5 rounded-lg text-sm font-semibold text-red-500 transition disabled:opacity-60"
                                 >
                                     {isFetchingNextPage ? (
                                     <span className="flex items-center gap-2">
@@ -134,7 +135,12 @@ export function BrowseContent() {
                                         Loading...
                                     </span>
                                     ) : (
-                                    "Load More"
+                                        <>
+                                            <div className="flex flex-col justify-center items-center">
+                                                Load More
+                                                <ChevronDown />
+                                            </div>
+                                        </>
                                     )}
                                 </button>
                                 </div>
