@@ -194,6 +194,6 @@ type ExtendedEpisodeSources = HiAnime.ScrapedAnimeEpisodesSources & {
 };
 
 export const getAnimeEpisodeSources = os.input(episodeSourcesSchema).handler(async ({input}) : Promise<ExtendedEpisodeSources> => {
-    const data = await hianime.getEpisodeSources(input.episodeId);
+    const data = await hianime.getEpisodeSources(input.episodeId, input.server, input.category);
     return data;
 });
