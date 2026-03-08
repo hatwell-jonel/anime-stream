@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { Fragment, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Play } from "lucide-react";
+import AnimeCard from "@/components/ui/anime-card";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -40,7 +41,7 @@ export default function AnimeDetailPage({ params }: PageProps) {
   if (infoLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Spinner className="size-8 text-muted-foreground text-red-500" />
+        <Spinner className="size-8 text-red-500" />
       </div>
     );
   }
@@ -259,44 +260,14 @@ function AnimeGrid({
             .filter((item) => item.id && item.poster && item.name)
             .slice(0, 6)
             .map((item) => {
-               const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
+                const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
                 return (
-                  <Link
-                    key={item.id}
-                    href={`/anime/${item.id}`}
-                    className="group block"
-                  >
-                    <div className="relative aspect-3/4 rounded-sm overflow-hidden bg-foreground/5 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
-
-                      {/* Poster */}
-                      <Image
-                        src={item.poster}
-                        alt={item.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-
-                      {/* Episode Badge */}
-                      <div className="absolute bottom-2 left-2 text-[14px] px-2 py-1 rounded-md bg-black/70 text-white backdrop-blur-sm">
-                        {episodeCount} EP
-                      </div>
-                      
-                      {/* Type Badge */}
-                      {item.type && (
-                        <div className="absolute top-2 right-2 text-[10px] px-2 py-1 rounded-md bg-red-500/75 text-white font-bold">
-                          {item.type}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="mt-3 text-sm font-medium line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors min-h-10">
-                      {item.name}
-                    </h3>
-                  </Link>
+                  <Fragment key={item.id}>
+                    <AnimeCard 
+                      anime={item}
+                      episodeCount={episodeCount}
+                    />
+                  </Fragment>
                 )
             })
           }

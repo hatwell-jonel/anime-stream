@@ -2,7 +2,7 @@
 
 import { Home } from 'lucide-react';
 import Link from 'next/link';
-import { use, useMemo, useRef } from 'react'
+import { Fragment, use, useMemo, useRef } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -33,6 +33,7 @@ import Image from 'next/image';
 import useWatchAnime from '@/hooks/use-watch-anime';
 import { animeAudioTypes, animeServers } from '@/types/anime.type';
 import { Button } from '@/components/ui/button';
+import AnimeCard from '@/components/ui/anime-card';
 
 interface PageProps {
   params: Promise<{ id: string; episode: number }>;
@@ -120,83 +121,43 @@ function WatchPage({ params }: PageProps) {
   });
 
   const totalEpisodes = allEpisodes.length;
-
-  // /* Generate episode ranges (99 per chunk) */
-  // const episodeRanges = useMemo(() => {
-  //  if (totalEpisodes <= 99)
-  //     return [{ start: 1, end: totalEpisodes, label: "All" }];
-
-  //   const chunkSize = 99;
-  //   const ranges: { start: number; end: number; label: string }[] = [];
-
-  //   for (let i = 0; i < totalEpisodes; i += chunkSize) {
-  //     const start = i + 1;
-  //     const end = Math.min(i + chunkSize, totalEpisodes);
-  //     ranges.push({ start, end, label: `${start}-${end}` });
-  //   }
-
-  //   return ranges;
-  // }, [totalEpisodes]);
-
-  //  /*Auto-select range containing current episode */
-  // const activeRangeIndex = useMemo(() => {
-  //   return episodeRanges.findIndex(
-  //     (range) => episodeId >= range.start && episodeId <= range.end
-  //   );
-  // }, [episodeRanges, episodeId]);
-  
-  // /* Use user-selected range or auto-detected range */
-  // const effectiveRange =
-  //   selectedRange >= 0 && selectedRange < episodeRanges.length
-  //     ? selectedRange
-  //     : Math.max(0, activeRangeIndex);
-
-
-  // const filteredEpisodes = useMemo(() => {
-  //   const range = episodeRanges[effectiveRange];
-  //   if (!range) return allEpisodes;
-  //   return allEpisodes.filter(
-  //     (ep) => ep.number >= range.start && ep.number <= range.end,
-  //   );
-  // }, [allEpisodes, episodeRanges, effectiveRange]);
-
   const chunkSize = 50;
 
-const episodeRanges = useMemo(() => {
-  if (!totalEpisodes) return [];
+  const episodeRanges = useMemo(() => {
+    if (!totalEpisodes) return [];
 
-  if (totalEpisodes <= chunkSize) {
-    return [{ start: 1, end: totalEpisodes }];
-  }
+    if (totalEpisodes <= chunkSize) {
+      return [{ start: 1, end: totalEpisodes }];
+    }
 
-  const ranges = [];
-  for (let i = 0; i < totalEpisodes; i += chunkSize) {
-    ranges.push({
-      start: i + 1,
-      end: Math.min(i + chunkSize, totalEpisodes),
-    });
-  }
+    const ranges = [];
+    for (let i = 0; i < totalEpisodes; i += chunkSize) {
+      ranges.push({
+        start: i + 1,
+        end: Math.min(i + chunkSize, totalEpisodes),
+      });
+    }
 
-  return ranges;
-}, [totalEpisodes]);
+    return ranges;
+  }, [totalEpisodes]);
 
-const autoRangeIndex = useMemo(() => {
-  return episodeRanges.findIndex(
-    (r) => episodeId >= r.start && episodeId <= r.end
-  );
-}, [episodeRanges, episodeId]);
+  const autoRangeIndex = useMemo(() => {
+    return episodeRanges.findIndex(
+      (r) => episodeId >= r.start && episodeId <= r.end
+    );
+  }, [episodeRanges, episodeId]);
 
-const activeRange =
-  selectedRange ?? (autoRangeIndex >= 0 ? autoRangeIndex : 0);
+  const activeRange =
+    selectedRange ?? (autoRangeIndex >= 0 ? autoRangeIndex : 0);
 
-const filteredEpisodes = useMemo(() => {
-  const range = episodeRanges[activeRange];
-  if (!range) return allEpisodes;
+  const filteredEpisodes = useMemo(() => {
+    const range = episodeRanges[activeRange];
+    if (!range) return allEpisodes;
 
-  return allEpisodes.filter(
-    (ep) => ep.number >= range.start && ep.number <= range.end
-  );
-}, [allEpisodes, episodeRanges, activeRange]);
+    return allEpisodes.filter(
+      (ep) => ep.number >= range.start && ep.number <= range.end
+    );
+  }, [allEpisodes, episodeRanges, activeRange]);
 
 
   if (currentAnime.isLoading || animeQtipInfo.isLoading ) {
@@ -313,39 +274,75 @@ const filteredEpisodes = useMemo(() => {
                       />
                     </MediaPlayer>
                   ) : (
-                    <>
-                      <Image
-                        src={String(info?.poster)}
-                        alt={`${String(info?.name)}`}
-                        fill
-                        className="object-cover opacity-30 blur-sm"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="w-16 h-16 rounded-full border border-border flex items-center justify-center mx-auto mb-4">
-                            <svg
-                              className="w-6 h-6 text-foreground/30"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                              />
-                            </svg>
-                          </div>
-                          <p className="text-foreground/60 text-sm mb-1">
-                            Video unavailable
-                          </p>
-                          <p className="text-foreground/30 text-xs">
-                            Try to select different server
-                          </p>
-                        </div>
-                      </div>
-                    </>
+                    <div className="absolute inset-0 flex items-center justify-center">
+
+    {/* Background Poster */}
+    <Image
+      src={getProxyUrl(String(info?.poster))}
+      alt={info?.name ?? "Poster"}
+      fill
+      className="object-cover opacity-30 blur-sm"
+    />
+
+    <div className="relative z-10 flex flex-col items-center gap-6 text-center bg-background/80 backdrop-blur-md px-8 py-8 rounded-xl border border-border shadow-lg">
+
+      {/* Icon */}
+      <div className="w-14 h-14 rounded-full border border-border flex items-center justify-center">
+        <svg
+          className="w-6 h-6 text-red-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M12 9v2m0 4h.01M3.34 16l6.928-12a2 2 0 013.464 0L20.66 16A2 2 0 0118.928 19H5.072A2 2 0 013.34 16z"
+          />
+        </svg>
+      </div>
+
+      {/* Text */}
+      <div>
+        <p className="text-sm font-semibold text-foreground">
+          Video unavailable
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Try switching to another server
+        </p>
+      </div>
+
+      {/* SERVER QUICK SWITCH */}
+      <div className="flex flex-wrap gap-2 justify-center max-w-xs">
+        {(selectedCategory === "sub" ? subServers : dubServers).map((server) => {
+          const serverName = server.serverName
+          if (!isAnimeServer(serverName)) return null
+
+          return (
+            <button
+              key={serverName}
+              onClick={() => setSelectedServer(serverName)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-medium transition",
+                selectedServer === serverName
+                  ? "bg-red-500 text-white"
+                  : "bg-foreground/5 text-foreground/70 hover:bg-foreground/10"
+              )}
+            >
+              {serverName}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Hint */}
+      <p className="text-[11px] text-muted-foreground">
+        Current: <span className="font-medium">{selectedServer}</span>
+      </p>
+
+    </div>
+  </div>
                   )}
                 </div>
               </section>
@@ -599,8 +596,6 @@ const filteredEpisodes = useMemo(() => {
         </div>
       </div>
 
-
-
       {/* Custom scrollbar styles */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -657,42 +652,12 @@ function AnimeGrid({
       {uniqueAnime.map((item) => {
         const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
         return (
-          <Link
-            key={`${item.id}-${item.name}`}
-            href={`/anime/${item.id}`}
-            className="group block"
-          >
-            <div className="relative aspect-3/4 rounded-sm overflow-hidden bg-foreground/5 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
-
-              {/* Poster */}
-              <Image
-                src={item.poster}
-                alt={item.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-
-              {/* Episode Badge */}
-              <div className="absolute bottom-2 left-2 text-[14px] px-2 py-1 rounded-md bg-black/70 text-white backdrop-blur-sm">
-                {episodeCount} EP
-              </div>
-
-              {/* Type Badge */}
-              {item.type && (
-                <div className="absolute top-2 right-2 text-[10px] px-2 py-1 rounded-md bg-red-500/75 text-white font-bold">
-                  {item.type}
-                </div>
-              )}
-            </div>
-
-            {/* Title */}
-            <h3 className="mt-3 text-sm font-medium line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors min-h-10">
-              {item.name}
-            </h3>
-          </Link>
+          <Fragment key={`${item.id}-${item.name}`}>
+            <AnimeCard
+              anime={item}
+              episodeCount={episodeCount}
+            />
+          </Fragment>
         );
       })}
     </div>

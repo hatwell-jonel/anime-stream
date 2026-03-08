@@ -7,6 +7,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle }
 import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 type DateObj = {
     date: Date;
@@ -92,15 +93,42 @@ function Upcoming() {
     return (
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-            <div className="my-14">
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                    Upcoming Anime
-                </h1>
-                <p className="text-muted-foreground mt-3 max-w-2xl">
-                    Stay updated with scheduled anime episode releases.
-                </p>
-            </div>
-
+            <section className="relative">
+                <div className="relative h-[35vh] md:h-[40vh] overflow-hidden">
+                    <Image
+                        src="/images/bg-2.webp"
+                        alt=""
+                        fill
+                        className="object-cover opacity-50"
+                        priority
+                    />
+        
+                    <div className="absolute inset-0 bg-linear-to-r from-black via-black/80 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
+        
+                    {/* content */}
+                    <div className="absolute inset-0 flex items-end pb-12">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
+        
+                        <div className="flex items-center gap-3 mb-3">
+                        <div className="h-2 w-16 bg-red-500 rounded-full" />
+                            <span className="text-xs font-bold tracking-widest text-red-500 uppercase">
+                                schedules
+                            </span>
+                        </div>
+        
+                        <h1 className="text-4xl md:text-6xl font-black text-white">
+                            Upcoming Anime
+                        </h1>
+        
+                        <p className="text-gray-400 mt-2 max-w-lg">
+                            Stay updated with scheduled anime episode releases.
+                        </p>
+                    </div>
+                    </div>
+                </div>
+            </section>
+            
             <div className="relative mb-8">
                 <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar">
                     {weekDates.map((d) => {
