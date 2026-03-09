@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, use, useCallback, useMemo, useRef, useState } from 'react'
+import { Fragment, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -357,6 +357,22 @@ function WatchPage({ params }: PageProps) {
     );
   }, [animeId, nextEpisode, selectedCategory, selectedServer, selectedRange, router]);
 
+  const info = currentAnime.data?.anime?.info;
+  const moreInfo = currentAnime.data?.anime?.moreInfo;
+  const relatedAnimes = currentAnime.data?.relatedAnimes ?? [];
+  const seasons = currentAnime.data?.seasons ?? [];
+  const anime = animeQtipInfo.data?.anime;
+  const subServers = episodeServers.data?.sub ?? [];
+  const dubServers = episodeServers.data?.dub ?? [];
+
+  useEffect(() => {
+    if (!info?.poster || !info?.name) return;
+    animeInfoRef.current = {
+      poster: info.poster,
+      name: info.name,
+    };
+  }, [info?.poster, info?.name]);
+
   if (currentAnime.isLoading || animeQtipInfo.isLoading ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -365,19 +381,13 @@ function WatchPage({ params }: PageProps) {
     );
   }
 
-  if (!currentAnime.data?.anime?.info || !animeQtipInfo.data?.anime) {
+  if (!info || !anime) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-foreground/60">Anime info not found.</p>
       </div>
     );
   }
-
-  const { relatedAnimes, seasons } = currentAnime.data;
-  const { info, moreInfo } = currentAnime.data.anime;
-  const { anime } = animeQtipInfo.data;
-  const subServers = episodeServers.data?.sub ?? [];
-  const dubServers = episodeServers.data?.dub ?? [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -710,7 +720,7 @@ function WatchPage({ params }: PageProps) {
                       <ul className='flex flex-col gap-2'>
                         <li className='text-sm  flex gap-2 text-stone-300'>
                           <span>Status:</span>
-                          <span>{moreInfo.status}</span>
+                          <span>{moreInfo?.status ?? "Unknown"}</span>
                         </li>
                         <li className='text-sm flex gap-2 text-stone-300'>
                           <span>Aired:</span>

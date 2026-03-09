@@ -50,7 +50,9 @@ export default function Header() {
             <nav className="flex items-center justify-between px-4 md:px-8 py-4">
 
                 {/* Logo */}
-                <Logo />
+                <Link href="/">
+                    <Logo />
+                </Link>
 
                 {/* Navigation - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-8">
