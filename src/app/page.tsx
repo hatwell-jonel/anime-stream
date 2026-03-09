@@ -81,8 +81,6 @@ export default function Home() {
             (item): item is WatchProgress & { poster: string; name: string } =>
                   !!item.poster && !!item.name,
       );
-      // const data = useHomepage();
-      // const uniqueCompleted = Array.from(new Map((data?.latestCompletedAnimes ?? []).map((item) => [item.id, item])).values());
       return (
             <main className="min-h-screen bg-background text-foreground">
                   <Hero />
@@ -96,58 +94,6 @@ export default function Home() {
                         )}
 
                         <TopTen />
-
-                        {/* <>
-                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">latest completed</h2>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                                    {uniqueCompleted.map((item) => {
-                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
-                                          return (
-                                                <Fragment key={`${item.id}-${item.name}`}>
-                                                      <AnimeCard
-                                                            anime={item as AnimeItem}
-                                                            episodeCount={episodeCount}
-                                                      />
-                                                </Fragment>
-                                          );
-                                    })}
-                              </div>
-                        </> */}
-
-                        {/* <>
-                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">Most Favorites</h2>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                                    {data?.mostFavoriteAnimes?.map((item) => {
-                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
-                                          return (
-                                                <Fragment key={`${item.id}-${item.name}`}>
-                                                      <AnimeCard
-                                                            anime={item as AnimeItem}
-                                                            episodeCount={episodeCount}
-                                                      />
-                                                </Fragment>
-                                          );
-                                    })}
-                              </div>
-                        </> */}
-{/* 
-                        <>
-                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">Top Upcoming</h2>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                                    {data?.topUpcomingAnimes?.map((item) => {
-                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
-                                          return (
-                                                <Fragment key={`${item.id}-${item.name}`}>
-                                                      <AnimeCard
-                                                            anime={item as AnimeItem}
-                                                            episodeCount={episodeCount}
-                                                      />
-                                                </Fragment>
-                                          );
-                                    })}
-                              </div>
-                        </> */}
-
                   </section>
             </main>
       )
