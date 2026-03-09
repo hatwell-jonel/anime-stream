@@ -1,8 +1,8 @@
 'use client';
 
-import { Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, use, useCallback, useMemo, useRef } from 'react'
+import { Fragment, use, useCallback, useMemo, useRef, useState } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,8 +15,10 @@ import { getProxyUrl } from '@/lib/proxy';
 import { Spinner } from '@/components/ui/spinner';
 import { useQueryState, parseAsStringLiteral, parseAsInteger } from 'nuqs';
 import {
+  isHLSProvider,
   MediaPlayer,
   MediaProvider,
+  MediaProviderAdapter,
   Poster,
   Track,
   type MediaPlayerInstance,
@@ -36,6 +38,8 @@ import { Button } from '@/components/ui/button';
 import AnimeCard from '@/components/ui/anime-card';
 import { usePlayerPreferences } from '@/hooks/use-player-preferences';
 import { useWatchProgress } from '@/hooks/use-watch-progress';
+import { NextEpisodeCountdown } from '@/app/features/NextEpisodeCountdown';
+import { useRouter } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ id: string; episode: number }>;
@@ -108,9 +112,11 @@ function MenuToggle({ label, checked, onChange }: MenuToggleProps) {
 
 function WatchPage({ params }: PageProps) {
 
-  const playerRef = useRef<MediaPlayerInstance>(null);
   const {id : animeId, episode : episodeId} = use(params);
+  const router = useRouter();
 
+  // REFS
+  const playerRef = useRef<MediaPlayerInstance>(null);
   const { preferences, updatePreferences } = usePlayerPreferences();
   const hasRestoredRef = useRef(false);
   const sourcesDataRef = useRef<{
@@ -120,23 +126,56 @@ function WatchPage({ params }: PageProps) {
   const hasAutoSkippedIntroRef = useRef(false);
   const hasAutoSkippedOutroRef = useRef(false);
   const lastSaveTimeRef = useRef(0);
+  const hasTriggeredAutoNextRef = useRef(false);
   const animeInfoRef = useRef<{ poster?: string; name?: string }>({});
 
   const { getProgress, saveProgress } = useWatchProgress();
-
+  const [countdownForEpisode, setCountdownForEpisode] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useQueryState(
     "category",
     parseAsStringLiteral(animeAudioTypes).withDefault("sub"),
   );  
-
   const [selectedServer, setSelectedServer] = useQueryState(
     "server",
     parseAsStringLiteral(animeServers).withDefault("hd-2"),
   );
-
   const [selectedRange, setSelectedRange] = useQueryState(
     "range",
     parseAsInteger.withDefault(0),
+  );
+
+
+  // Derive whether to show countdown (only show for current episode)
+  const showCountdown = countdownForEpisode === episodeId;
+
+  const { 
+    currentAnime,
+    animeQtipInfo,
+    currentAnimeEpisodeLoading,
+    episodeServers,
+    episodeSources,
+    streamingSources,
+    thumbnailTrack,
+    subtitles,
+    allEpisodes
+  } = useWatchAnime({ 
+    animeId, 
+    episodeId,
+    selectedCategory,
+    selectedServer,
+  });
+
+  const onProviderChange = useCallback(
+    (provider: MediaProviderAdapter | null) => {
+      if (isHLSProvider(provider)) {
+        provider.config = {
+          xhrSetup(xhr) {
+            xhr.withCredentials = false;
+          },
+        };
+      }
+    },
+    [],
   );
 
   // Restore saved progress and preferences when player is ready
@@ -215,25 +254,58 @@ function WatchPage({ params }: PageProps) {
     }
   }, [animeId, episodeId, saveProgress, preferences.autoSkip]);
 
-  const { 
-    currentAnime,
-    animeQtipInfo,
-    currentAnimeEpisodeLoading,
-    episodeServers,
-    episodeSources,
-    streamingSources,
-    thumbnailTrack,
-    subtitles,
-    allEpisodes
-  } = useWatchAnime({ 
-    animeId, 
-    episodeId,
-    selectedCategory,
-    selectedServer,
-  });
+  // Save volume preference on change
+  const onVolumeChange = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || !hasRestoredRef.current) return;
+    updatePreferences({ volume: player.volume, muted: player.muted });
+  }, [updatePreferences]);
+
+  // Save playback rate preference on change
+  const onRateChange = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || !hasRestoredRef.current) return;
+    updatePreferences({ playbackRate: player.playbackRate });
+  }, [updatePreferences]);
+
+  // Save caption language preference on change
+  const onTextTrackChange = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || !hasRestoredRef.current) return;
+    const activeTrack = player.textTracks.selected;
+    updatePreferences({ captionLanguage: activeTrack?.label ?? null });
+  }, [updatePreferences]);
 
   const totalEpisodes = allEpisodes.length;
   const chunkSize = 50;
+  const prevEpisode = Number(episodeId) > 1 ? Number(episodeId) - 1 : null;
+  const nextEpisode = Number(episodeId) < totalEpisodes ? Number(episodeId) + 1 : null;
+
+  // Trigger auto-next countdown (used by both onEnded and onTimeUpdate)
+  const triggerAutoNext = useCallback(() => {
+    if (hasTriggeredAutoNextRef.current) return;
+    if (nextEpisode && preferences.autoNextEpisode) {
+      hasTriggeredAutoNextRef.current = true;
+      setCountdownForEpisode(episodeId);
+    }
+  }, [nextEpisode, preferences.autoNextEpisode, episodeId]);
+
+  
+  // Handle video ended - trigger auto-next countdown
+  const onEnded = useCallback(() => {
+    triggerAutoNext();
+  }, [triggerAutoNext]);
+
+  // Handle seek to near end (e.g., skip outro) - trigger auto-next
+  const onSeeked = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    const { currentTime, duration } = player;
+    // If seeked to within 3 seconds of end, trigger auto-next
+    if (duration > 0 && duration - currentTime <= 3) {
+      triggerAutoNext();
+    }
+  }, [triggerAutoNext]);
 
   const episodeRanges = useMemo(() => {
     if (!totalEpisodes) return [];
@@ -271,6 +343,19 @@ function WatchPage({ params }: PageProps) {
     );
   }, [allEpisodes, episodeRanges, activeRange]);
 
+  // Cancel auto-next countdown
+  const cancelCountdown = useCallback(() => {
+    setCountdownForEpisode(null);
+  }, []);
+
+  // Navigate to next episode
+  const navigateToNext = useCallback(() => {
+    if (!nextEpisode) return;
+    setCountdownForEpisode(null);
+    router.push(
+      `/watch/${animeId}/2?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`,
+    );
+  }, [animeId, nextEpisode, selectedCategory, selectedServer, selectedRange, router]);
 
   if (currentAnime.isLoading || animeQtipInfo.isLoading ) {
     return (
@@ -336,15 +421,15 @@ function WatchPage({ params }: PageProps) {
                       viewType="video"
                       streamType="on-demand"
                       crossOrigin="anonymous"
-                      // autoPlay={preferences.autoplay}
-                      // onProviderChange={onProviderChange}
+                      autoPlay={preferences.autoplay}
+                      onProviderChange={onProviderChange}
                       onCanPlay={onCanPlay}
                       onTimeUpdate={onTimeUpdate}
-                      // onVolumeChange={onVolumeChange}
-                      // onRateChange={onRateChange}
-                      // onTextTrackChange={onTextTrackChange}
-                      // onEnded={onEnded}
-                      // onSeeked={onSeeked}
+                      onVolumeChange={onVolumeChange}
+                      onRateChange={onRateChange}
+                      onTextTrackChange={onTextTrackChange}
+                      onEnded={onEnded}
+                      onSeeked={onSeeked}
                       className="w-full h-full [--media-slider-track-fill-bg:var(--color-red-500)]"
                     >
 
@@ -361,6 +446,14 @@ function WatchPage({ params }: PageProps) {
                         outro={episodeSources.data?.outro ?? null}
                         showSkip={preferences.autoSkip}
                       />
+
+                      {showCountdown && nextEpisode && (
+                        <NextEpisodeCountdown
+                          nextEpisode={nextEpisode}
+                          onCancel={cancelCountdown}
+                          onPlayNow={navigateToNext}
+                        />
+                      )}
 
                       {
                         subtitles?.map((subtitle, index) => {
@@ -387,6 +480,7 @@ function WatchPage({ params }: PageProps) {
                           )
                         })
                       }
+
                       <DefaultVideoLayout
                         icons={defaultLayoutIcons}
                         thumbnails={
@@ -418,78 +512,76 @@ function WatchPage({ params }: PageProps) {
                     </MediaPlayer>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
+                      {/* Background Poster */}
+                      <Image
+                        src={getProxyUrl(String(info?.poster))}
+                        alt={info?.name ?? "Poster"}
+                        fill
+                        className="object-cover opacity-30 blur-sm"
+                      />
 
-    {/* Background Poster */}
-    <Image
-      src={getProxyUrl(String(info?.poster))}
-      alt={info?.name ?? "Poster"}
-      fill
-      className="object-cover opacity-30 blur-sm"
-    />
+                      <div className="relative z-10 flex flex-col items-center gap-6 text-center bg-background/80 backdrop-blur-md px-8 py-8 rounded-xl border border-border shadow-lg">
 
-    <div className="relative z-10 flex flex-col items-center gap-6 text-center bg-background/80 backdrop-blur-md px-8 py-8 rounded-xl border border-border shadow-lg">
+                        {/* Icon */}
+                        <div className="w-14 h-14 rounded-full border border-border flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6 text-red-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M12 9v2m0 4h.01M3.34 16l6.928-12a2 2 0 013.464 0L20.66 16A2 2 0 0118.928 19H5.072A2 2 0 013.34 16z"
+                            />
+                          </svg>
+                        </div>
 
-      {/* Icon */}
-      <div className="w-14 h-14 rounded-full border border-border flex items-center justify-center">
-        <svg
-          className="w-6 h-6 text-red-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M12 9v2m0 4h.01M3.34 16l6.928-12a2 2 0 013.464 0L20.66 16A2 2 0 0118.928 19H5.072A2 2 0 013.34 16z"
-          />
-        </svg>
-      </div>
+                        {/* Text */}
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Video unavailable
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Try switching to another server
+                          </p>
+                        </div>
 
-      {/* Text */}
-      <div>
-        <p className="text-sm font-semibold text-foreground">
-          Video unavailable
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Try switching to another server
-        </p>
-      </div>
+                        {/* SERVER QUICK SWITCH */}
+                        <div className="flex flex-wrap gap-2 justify-center max-w-xs">
+                          {(selectedCategory === "sub" ? subServers : dubServers).map((server) => {
+                            const serverName = server.serverName
+                            if (!isAnimeServer(serverName)) return null
 
-      {/* SERVER QUICK SWITCH */}
-      <div className="flex flex-wrap gap-2 justify-center max-w-xs">
-        {(selectedCategory === "sub" ? subServers : dubServers).map((server) => {
-          const serverName = server.serverName
-          if (!isAnimeServer(serverName)) return null
+                            return (
+                              <button
+                                key={serverName}
+                                onClick={() => setSelectedServer(serverName)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-md text-xs font-medium transition",
+                                  selectedServer === serverName
+                                    ? "bg-red-500 text-white"
+                                    : "bg-foreground/5 text-foreground/70 hover:bg-foreground/10"
+                                )}
+                              >
+                                {serverName}
+                              </button>
+                            )
+                          })}
+                        </div>
 
-          return (
-            <button
-              key={serverName}
-              onClick={() => setSelectedServer(serverName)}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium transition",
-                selectedServer === serverName
-                  ? "bg-red-500 text-white"
-                  : "bg-foreground/5 text-foreground/70 hover:bg-foreground/10"
-              )}
-            >
-              {serverName}
-            </button>
-          )
-        })}
-      </div>
+                        {/* Hint */}
+                        <p className="text-[11px] text-muted-foreground">
+                          Current: <span className="font-medium">{selectedServer}</span>
+                        </p>
 
-      {/* Hint */}
-      <p className="text-[11px] text-muted-foreground">
-        Current: <span className="font-medium">{selectedServer}</span>
-      </p>
-
-    </div>
-  </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </section>
-
               {/* Server Selection */}
               <section className="mt-4 md:mt-6 p-3 md:p-4 rounded-xl bg-foreground/2 border border-border">
                 <div className="flex flex-wrap items-center gap-4 md:gap-6">
@@ -502,7 +594,7 @@ function WatchPage({ params }: PageProps) {
                       <button
                         onClick={() => setSelectedCategory("sub")}
                         disabled={subServers.length === 0}
-                        className={`px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+                        className={`cursor-pointer px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
                           selectedCategory === "sub"
                             ? "bg-foreground/10 text-foreground shadow-sm"
                             : "text-foreground/50 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -513,7 +605,7 @@ function WatchPage({ params }: PageProps) {
                       <button
                         onClick={() => setSelectedCategory("dub")}
                         disabled={dubServers.length === 0}
-                        className={`px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+                        className={`cursor-pointer px-3 md:px-4 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
                           selectedCategory === "dub"
                             ? "bg-foreground/10 text-foreground shadow-sm"
                             : "text-foreground/50 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -527,6 +619,7 @@ function WatchPage({ params }: PageProps) {
                   <div className="hidden md:block w-px h-6 bg-foreground/10" />
 
                   {/* Servers */}
+
                   <div className="flex items-center gap-2 md:gap-3">
                     <span className="text-[10px] md:text-xs text-foreground/40 uppercase tracking-wider">
                       Server
@@ -542,7 +635,7 @@ function WatchPage({ params }: PageProps) {
                           <button
                             key={serverName}
                             onClick={() => setSelectedServer(serverName)}
-                            className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
+                            className={`cursor-pointer px-2 md:px-3 py-1 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all ${
                               selectedServer === serverName
                                 ? "bg-foreground text-background"
                                 : "bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground/80"
@@ -554,9 +647,47 @@ function WatchPage({ params }: PageProps) {
                       })}
                     </div>
                   </div>
+
+                  <div className="hidden md:block w-px h-6 bg-foreground/10" />
+
+                  <div className="flex items-center gap-1.5 md:gap-2 left-0">
+                      {prevEpisode ? (
+                        <Link
+                          href={`/watch/${animeId}/${prevEpisode}?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`}
+                        >
+                            <div className="w-fit h-9 md:h-10 rounded-md flex items-center justify-center px-3 hover:bg-red-500 transition-colors">
+                              <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-foreground/70" />
+                              <span className="text-sm">Prev Ep</span>
+
+                            </div>
+                        </Link>
+                      ) : (
+                        <div className="w-fit h-9 md:h-10 rounded-md bg-foreground/2 flex items-center justify-center">
+                          <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-foreground/70" />
+                          <span className="text-sm">Prev Ep</span>
+                        </div>
+                      )}
+
+                      <span>|</span>
+
+                      {nextEpisode ? (
+                        <Link
+                          href={`/watch/${animeId}/${nextEpisode}?category=${selectedCategory}&server=${selectedServer}&range=${selectedRange}`}
+                        >
+                            <div className="w-fit h-9 md:h-10 rounded-md bg-foreground/2 flex items-center justify-center px-3 hover:bg-red-500 transition-colors">
+                              <span className="text-sm">Next Ep</span>
+                              <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-foreground/70" />
+                            </div>
+                        </Link>
+                      ) : (
+                        <div className="w-fit h-9 md:h-10 rounded-md bg-foreground/2 flex items-center justify-center">
+                          <span className="text-sm">Next Ep</span>
+                          <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-foreground/70" />
+                        </div>
+                      )}
+                  </div>
                 </div>
               </section>
-
               {/* Episode Info */}
               <section className='mt-10'>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -694,7 +825,6 @@ function WatchPage({ params }: PageProps) {
                   </div>
                 </div>
               </section>
-
               
               <section className="mt-15">
                 {
