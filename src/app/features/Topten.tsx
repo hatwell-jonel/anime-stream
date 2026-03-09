@@ -1,12 +1,13 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import useTopAnime from "@/hooks/use-top-anime";
+import useHomepage from "@/hooks/use-homepage";
+import useTopAnime from "@/hooks/use-homepage";
 import Image from "next/image";
 import Link from "next/link";
 
 function TopTen() {
-  const { isTop10Loading, topTenToday } = useTopAnime();
+  const { isTop10Loading, topTenToday } = useHomepage();
 
   if (isTop10Loading) {
     return (

@@ -1,15 +1,28 @@
 'use client'
 
+import { Fragment } from 'react';
 import Hero from '~/features/Hero'
-import TopTen from './features/top-ten'
+import TopTen from './features/Topten'
 import Link from 'next/link';
 import { useWatchProgress, WatchProgress } from '@/hooks/use-watch-progress';
 import Image from 'next/image';
+import useHomepage from '@/hooks/use-homepage';
+import AnimeCard from '@/components/ui/anime-card';
+
+
+type AnimeItem = {
+      id: string;
+      name: string;
+      poster: string;
+      type?: string | null;
+      jname?: string | null;
+      episodes?: { sub: number | null; dub: number | null };
+};
 
 function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 function ContinueWatchingGrid({
@@ -61,31 +74,80 @@ function ContinueWatchingGrid({
       );
 }
 
-
 export default function Home() {
-
       const { getAllRecentlyWatched } = useWatchProgress();
       const recentlyWatched = getAllRecentlyWatched(6);
       const continueWatchingItems = recentlyWatched.filter(
             (item): item is WatchProgress & { poster: string; name: string } =>
                   !!item.poster && !!item.name,
       );
-
+      const data = useHomepage();
+      const uniqueCompleted = Array.from(new Map((data?.latestCompletedAnimes ?? []).map((item) => [item.id, item])).values());
       return (
             <main className="min-h-screen bg-background text-foreground">
                   <Hero />
                   
                   <section className="px-4 md:px-8 py-12 space-y-12">
                         {continueWatchingItems.length > 0 && (
-                              <div>
+                              <>
                                     <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">Continue Watching</h2>
                                     <ContinueWatchingGrid items={continueWatchingItems} />
-                              </div>
+                              </>
                         )}
 
-                        <div>
-                              <TopTen />
-                        </div>
+                        <TopTen />
+
+                        <>
+                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">latest completed</h2>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                                    {uniqueCompleted.map((item) => {
+                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
+                                          return (
+                                                <Fragment key={`${item.id}-${item.name}`}>
+                                                      <AnimeCard
+                                                            anime={item as AnimeItem}
+                                                            episodeCount={episodeCount}
+                                                      />
+                                                </Fragment>
+                                          );
+                                    })}
+                              </div>
+                        </>
+
+                        <>
+                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">Most Favorites</h2>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                                    {data?.mostFavoriteAnimes?.map((item) => {
+                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
+                                          return (
+                                                <Fragment key={`${item.id}-${item.name}`}>
+                                                      <AnimeCard
+                                                            anime={item as AnimeItem}
+                                                            episodeCount={episodeCount}
+                                                      />
+                                                </Fragment>
+                                          );
+                                    })}
+                              </div>
+                        </>
+
+                        <>
+                              <h2 className="text-2xl font-medium uppercase tracking-wider mb-8">Top Upcoming</h2>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                                    {data?.topUpcomingAnimes?.map((item) => {
+                                          const episodeCount = item.episodes?.sub ?? item.episodes?.dub ?? "?";
+                                          return (
+                                                <Fragment key={`${item.id}-${item.name}`}>
+                                                      <AnimeCard
+                                                            anime={item as AnimeItem}
+                                                            episodeCount={episodeCount}
+                                                      />
+                                                </Fragment>
+                                          );
+                                    })}
+                              </div>
+                        </>
+
                   </section>
             </main>
       )

@@ -5,6 +5,7 @@ import Header from "~/features/Header";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sileo";
 import "./globals.css";
+import Footer from "./features/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
               <Toaster position="top-center" />
               {children}
             </main>
+            <Footer />
           </QueryProvider>
         </NuqsAdapter>
       </body>

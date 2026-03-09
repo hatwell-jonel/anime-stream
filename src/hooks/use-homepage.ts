@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const MINUTE =  60 * 1000; // 1 minute in milliseconds
 
-function useTopAnime() {
+function useHomepage() {
 
     const {data, isLoading} = useQuery({
         ...orpc.anime.getHomePage.queryOptions({}),
@@ -16,6 +16,13 @@ function useTopAnime() {
     const topTenToday = topTen?.today;
     const topTenWeek = topTen?.week;
     const topTenMonth = topTen?.month;
+    const mostPopularAnimes = data?.mostPopularAnimes;
+    const topUpcomingAnimes = data?.topUpcomingAnimes;
+    const topAiringAnimes = data?.topAiringAnimes;
+    const spotlightAnimes = data?.spotlightAnimes;
+    const trendingAnimes = data?.trendingAnimes;
+    const latestCompletedAnimes = data?.latestCompletedAnimes;
+    const mostFavoriteAnimes = data?.mostFavoriteAnimes;
 
 
     return {
@@ -23,10 +30,17 @@ function useTopAnime() {
         topTenToday,
         topTenWeek,
         topTenMonth,
+        mostPopularAnimes,
+        topUpcomingAnimes,
+        topAiringAnimes,
+        spotlightAnimes,
+        trendingAnimes,
+        latestCompletedAnimes,
+        mostFavoriteAnimes
     } 
 }
 
-export default useTopAnime
+export default useHomepage
 
 
 /**
