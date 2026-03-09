@@ -95,11 +95,11 @@ export function useWatchProgress() {
 
     const saveProgress = useCallback(
         (
-        animeId: string,
-        episodeNumber: number,
-        currentTime: number,
-        duration: number,
-        metadata?: { poster?: string; name?: string }
+            animeId: string,
+            episodeNumber: number,
+            currentTime: number,
+            duration: number,
+            metadata?: { poster?: string; name?: string }
         ) => {
         // Only save if we have valid time values and have watched at least 5 seconds
         if (currentTime < 5 || duration <= 0) return;
@@ -154,10 +154,10 @@ export function useWatchProgress() {
 
     const getLastWatchedEpisode = useCallback(
         (animeId: string): WatchProgress | null => {
-        const animeEpisodes = Object.values(allProgress)
-            .filter((p) => p.animeId === animeId)
-            .sort((a, b) => b.updatedAt - a.updatedAt);
-        return animeEpisodes[0] ?? null;
+            const animeEpisodes = Object.values(allProgress)
+                .filter((p) => p.animeId === animeId)
+                .sort((a, b) => b.updatedAt - a.updatedAt);
+            return animeEpisodes[0] ?? null;
         },
         [allProgress]
     );

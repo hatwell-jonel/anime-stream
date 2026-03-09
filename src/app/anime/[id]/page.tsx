@@ -12,8 +12,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Play } from "lucide-react";
+import { Bookmark, Play } from "lucide-react";
 import AnimeCard from "@/components/ui/anime-card";
+import { sileo } from "sileo";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,6 +36,8 @@ export default function AnimeDetailPage({ params }: PageProps) {
   const { isSaved, toggleSave } = useSavedSeries();
   const { getLastWatchedEpisode } = useWatchProgress();
   const lastWatched = getLastWatchedEpisode(id);
+
+  console.log(lastWatched)
 
   if (error) notFound();
 
@@ -143,17 +146,27 @@ export default function AnimeDetailPage({ params }: PageProps) {
                 </Button>
 
                 <Button
-                  onClick={() =>
-                    toggleSave({
+                  onClick={() => {
+                    const wasSaved = toggleSave({
                       id,
-                      name: String(info.name),
-                      poster: String(info.poster),
-                    })
-                  }
-                  // className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-medium hover:bg-white/10 transition-all"
+                      name: info.name!,
+                      poster: info.poster!,
+                    });
+                    
+                    sileo.success({
+                      title: wasSaved ? "Series saved" : "Removed from saved",
+                      fill: "green",
+                      duration: 2000,
+                      styles: {
+                        title: "text-white!",
+                        description: "text-white/75!",
+                      },
+                    });
+                  }}
                   size="lg"
                   className="bg-white"
                 >
+                  <Bookmark fill={isSaved(id) ? "#000" : "white"} />
                   {isSaved(id) ? "Saved" : "Save"}
                 </Button>
               </div>

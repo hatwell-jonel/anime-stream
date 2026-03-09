@@ -35,8 +35,8 @@ function NavLink() {
         <>
             <NextLink href="/">Home</NextLink>
             <NextLink href="/library">Library</NextLink>
-            <NextLink href="/upcoming">Upcoming</NextLink>
             <NextLink href="/my-list">My List</NextLink>
+            <NextLink href="/upcoming">Upcoming</NextLink>
         </>
     )
 }
