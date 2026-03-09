@@ -65,8 +65,9 @@ export default function SearchAnime() {
       <Button
         onClick={() => setOpen(true)}
         variant="ghost"
-        className="gap-10 text-muted-foreground hover:text-foreground border-b border-neutral-300 rounded-b-none"
+        className="gap-10 text-muted-foreground hover:text-foreground border-b border-neutral-300 rounded-b-none w-full"
       >
+        <div className="flex justify-between w-full">
           <div className="flex items-center justify-center gap-1">
             <Search className="w-5 h-5 text-red-500 font-bold" />
             Search
@@ -74,6 +75,7 @@ export default function SearchAnime() {
           <span className="ml-2 hidden md:inline text-xs bg-muted px-2 py-0.5 rounded">
             Ctrl K
           </span>
+        </div>
       </Button>
 
       <CommandDialog

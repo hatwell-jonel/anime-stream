@@ -30,14 +30,14 @@ function NextLink({ href, children }: React.PropsWithChildren<{ href: string }>)
     )
 }
 
-function NavLink() {
+function NavLink({ className }: { className?: string }) {
     return (
-        <>
+        <div className={cn("flex gap-6", className)}>
             <NextLink href="/">Home</NextLink>
             <NextLink href="/library">Library</NextLink>
             <NextLink href="/my-list">My List</NextLink>
             <NextLink href="/upcoming">Upcoming</NextLink>
-        </>
+        </div>
     )
 }
 
@@ -61,9 +61,9 @@ export default function Header() {
 
                 {/* Search - Hidden on mobile */}
                 <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
-                <div className="relative w-full">
-                    <SearchAnime />
-                </div>
+                    <div className="relative w-full">
+                        <SearchAnime />
+                    </div>
                 </div>
 
                 {/* Right side actions */}
@@ -80,13 +80,9 @@ export default function Header() {
             {isMenuOpen && (
                 <div className="md:hidden  px-4 py-4 border-t border-border bg-card">
                     <div className="space-y-3">
-                        <NavLink />
+                        <NavLink className="flex-col gap-4 text-lg" />
                     <div className="relative">
-                    <Input 
-                        placeholder="Search anime..." 
-                        className="pl-10 bg-secondary text-foreground border-0 mt-2"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <SearchAnime  />
                     </div>
                 </div>
                 </div>
