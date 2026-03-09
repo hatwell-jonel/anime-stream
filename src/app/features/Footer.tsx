@@ -10,21 +10,20 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
                 {/* Logo / Brand */}
-                <Logo />
+                <Link href="/">
+                    <Logo />
+                </Link>
 
                 {/* Navigation */}
                 <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
                     <Link href="/" className="hover:text-foreground transition-colors">
-                    Home
-                    </Link>
-                    <Link href="/browse" className="hover:text-foreground transition-colors">
-                    Browse
+                        Home
                     </Link>
                     <Link href="/library" className="hover:text-foreground transition-colors">
-                    Library
+                        Library
                     </Link>
-                    <Link href="/saved" className="hover:text-foreground transition-colors">
-                    Saved
+                    <Link href="/my-list" className="hover:text-foreground transition-colors">
+                        Saved
                     </Link>
                 </div>
 
