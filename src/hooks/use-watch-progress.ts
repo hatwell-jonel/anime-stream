@@ -87,8 +87,8 @@ export function useWatchProgress() {
 
     const getProgress = useCallback(
         (animeId: string, episodeNumber: number): WatchProgress | null => {
-        const key = getProgressKey(animeId, episodeNumber);
-        return allProgress[key] ?? null;
+            const key = getProgressKey(animeId, episodeNumber);
+            return allProgress[key] ?? null;
         },
         [allProgress]
     );
@@ -101,36 +101,36 @@ export function useWatchProgress() {
             duration: number,
             metadata?: { poster?: string; name?: string }
         ) => {
-        // Only save if we have valid time values and have watched at least 5 seconds
-        if (currentTime < 5 || duration <= 0) return;
+            // Only save if we have valid time values and have watched at least 5 seconds
+            if (currentTime < 5 || duration <= 0) return;
 
-        // Don't save if we're near the end (within last 60 seconds or 95% complete)
-        const percentComplete = (currentTime / duration) * 100;
-        if (percentComplete >= 95 || duration - currentTime < 60) {
-            // Mark as completed by removing progress
+            // Don't save if we're near the end (within last 60 seconds or 95% complete)
+            const percentComplete = (currentTime / duration) * 100;
+            if (percentComplete >= 95 || duration - currentTime < 60) {
+                // Mark as completed by removing progress
+                const current = getStoredProgress();
+                const key = getProgressKey(animeId, episodeNumber);
+                if (current[key]) {
+                delete current[key];
+                setStoredProgress(current);
+                emitChange();
+                }
+                return;
+            }
+
             const current = getStoredProgress();
             const key = getProgressKey(animeId, episodeNumber);
-            if (current[key]) {
-            delete current[key];
+            current[key] = {
+                animeId,
+                episodeNumber,
+                currentTime,
+                duration,
+                updatedAt: Date.now(),
+                ...(metadata?.poster && { poster: metadata.poster }),
+                ...(metadata?.name && { name: metadata.name }),
+            };
             setStoredProgress(current);
             emitChange();
-            }
-            return;
-        }
-
-        const current = getStoredProgress();
-        const key = getProgressKey(animeId, episodeNumber);
-        current[key] = {
-            animeId,
-            episodeNumber,
-            currentTime,
-            duration,
-            updatedAt: Date.now(),
-            ...(metadata?.poster && { poster: metadata.poster }),
-            ...(metadata?.name && { name: metadata.name }),
-        };
-        setStoredProgress(current);
-        emitChange();
         },
         []
     );

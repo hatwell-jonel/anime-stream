@@ -2,7 +2,7 @@
 
 import { Home } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, use, useMemo, useRef } from 'react'
+import { Fragment, use, useCallback, useMemo, useRef } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,6 +34,8 @@ import useWatchAnime from '@/hooks/use-watch-anime';
 import { animeAudioTypes, animeServers } from '@/types/anime.type';
 import { Button } from '@/components/ui/button';
 import AnimeCard from '@/components/ui/anime-card';
+import { usePlayerPreferences } from '@/hooks/use-player-preferences';
+import { useWatchProgress } from '@/hooks/use-watch-progress';
 
 interface PageProps {
   params: Promise<{ id: string; episode: number }>;
@@ -83,10 +85,44 @@ function WatchBreadcrumb(data: WatchBreadcrumbProps) {
   );
 }
 
+
+interface MenuToggleProps {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+function MenuToggle({ label, checked, onChange }: MenuToggleProps) {
+  return (
+    <div className="vds-menu-item" role="menuitemcheckbox" aria-checked={checked}>
+      <div className="vds-menu-item-label">{label}</div>
+      <div
+        className="vds-menu-checkbox"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+      />
+    </div>
+  );
+}
+
+
 function WatchPage({ params }: PageProps) {
 
   const playerRef = useRef<MediaPlayerInstance>(null);
   const {id : animeId, episode : episodeId} = use(params);
+
+  const { preferences, updatePreferences } = usePlayerPreferences();
+  const hasRestoredRef = useRef(false);
+  const sourcesDataRef = useRef<{
+    intro?: { start: number; end: number } | null;
+    outro?: { start: number; end: number } | null;
+  }>({});
+  const hasAutoSkippedIntroRef = useRef(false);
+  const hasAutoSkippedOutroRef = useRef(false);
+  const lastSaveTimeRef = useRef(0);
+  const animeInfoRef = useRef<{ poster?: string; name?: string }>({});
+
+  const { getProgress, saveProgress } = useWatchProgress();
 
   const [selectedCategory, setSelectedCategory] = useQueryState(
     "category",
@@ -102,6 +138,82 @@ function WatchPage({ params }: PageProps) {
     "range",
     parseAsInteger.withDefault(0),
   );
+
+  // Restore saved progress and preferences when player is ready
+  const onCanPlay = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
+    // Restore playback rate
+    if (preferences.playbackRate !== 1) {
+      player.playbackRate = preferences.playbackRate;
+    }
+
+    // Restore volume
+    player.volume = preferences.volume;
+    player.muted = preferences.muted;
+
+    // Restore watch progress
+    const progress = getProgress(animeId, episodeId);
+    if (progress && progress.currentTime > 5) {
+      // Only restore if we haven't finished (more than 60s remaining)
+      const remaining = progress.duration - progress.currentTime;
+      if (remaining > 60) {
+        player.currentTime = progress.currentTime;
+      }
+    }
+  }, [animeId, episodeId, preferences, getProgress]);
+
+  // Save progress on time update (throttled to every 5 seconds) + auto-skip
+  const onTimeUpdate = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+
+    const currentTime = player.currentTime;
+    const duration = player.duration;
+
+    // Save progress (throttled)
+    if (Math.abs(currentTime - lastSaveTimeRef.current) >= 5) {
+      lastSaveTimeRef.current = currentTime;
+      saveProgress(
+        animeId,
+        episodeId,
+        currentTime,
+        duration,
+        animeInfoRef.current,
+      );
+    }
+
+    // Auto-skip intro/outro
+    if (preferences.autoSkip) {
+      const intro = sourcesDataRef.current.intro ?? null;
+      const outro = sourcesDataRef.current.outro ?? null;
+
+      // Check if in intro and should skip
+      const isInIntro =
+        intro &&
+        intro.end > 0 &&
+        currentTime >= intro.start &&
+        currentTime < intro.end;
+      if (isInIntro && !hasAutoSkippedIntroRef.current) {
+        hasAutoSkippedIntroRef.current = true;
+        player.currentTime = intro.end;
+        return;
+      }
+
+      // Check if in outro and should skip
+      const isInOutro =
+        outro &&
+        outro.end > 0 &&
+        currentTime >= outro.start &&
+        currentTime < outro.end;
+      if (isInOutro && !hasAutoSkippedOutroRef.current) {
+        hasAutoSkippedOutroRef.current = true;
+        player.currentTime = outro.end;
+      }
+    }
+  }, [animeId, episodeId, saveProgress, preferences.autoSkip]);
 
   const { 
     currentAnime,
@@ -181,7 +293,7 @@ function WatchPage({ params }: PageProps) {
   const { anime } = animeQtipInfo.data;
   const subServers = episodeServers.data?.sub ?? [];
   const dubServers = episodeServers.data?.dub ?? [];
-  
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Main Layout */}
@@ -226,8 +338,8 @@ function WatchPage({ params }: PageProps) {
                       crossOrigin="anonymous"
                       // autoPlay={preferences.autoplay}
                       // onProviderChange={onProviderChange}
-                      // onCanPlay={onCanPlay}
-                      // onTimeUpdate={onTimeUpdate}
+                      onCanPlay={onCanPlay}
+                      onTimeUpdate={onTimeUpdate}
                       // onVolumeChange={onVolumeChange}
                       // onRateChange={onRateChange}
                       // onTextTrackChange={onTextTrackChange}
@@ -247,11 +359,22 @@ function WatchPage({ params }: PageProps) {
                       <SkipButton 
                         intro={episodeSources.data?.intro ?? null} 
                         outro={episodeSources.data?.outro ?? null}
-                        showSkip={true}
+                        showSkip={preferences.autoSkip}
                       />
 
                       {
-                        subtitles?.map((subtitle) => {
+                        subtitles?.map((subtitle, index) => {
+                          const isPreferredLang = preferences.captionLanguage
+                          ? subtitle.lang
+                              .toLowerCase()
+                              .includes(
+                                preferences.captionLanguage.toLowerCase(),
+                              )
+                          : false;
+                        const isDefault = preferences.captionLanguage
+                          ? isPreferredLang
+                          : index === 0;
+
                           return (
                             <Track
                               key={`${subtitle.url}`}
@@ -259,7 +382,7 @@ function WatchPage({ params }: PageProps) {
                               kind="subtitles"
                               label={subtitle.lang}
                               language={subtitle.lang.toLowerCase().slice(0, 2)}
-                              default={true}
+                              default={isDefault}
                             />
                           )
                         })
@@ -271,6 +394,26 @@ function WatchPage({ params }: PageProps) {
                             ? getProxyUrl(thumbnailTrack.url)
                             : undefined
                         }
+                        slots={{
+                          playbackMenuItemsEnd: (
+                            <>
+                              <MenuToggle
+                                label="Auto Skip Intro/Outro"
+                                checked={preferences.autoSkip}
+                                onChange={(checked) =>
+                                  updatePreferences({ autoSkip: checked })
+                                }
+                              />
+                              <MenuToggle
+                                label="Auto Play Next Episode"
+                                checked={preferences.autoNextEpisode}
+                                onChange={(checked) =>
+                                  updatePreferences({ autoNextEpisode: checked })
+                                }
+                              />
+                            </>
+                          ),
+                        }}
                       />
                     </MediaPlayer>
                   ) : (
