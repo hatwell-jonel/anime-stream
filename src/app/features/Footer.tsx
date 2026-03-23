@@ -31,16 +31,7 @@ export default function Footer() {
 
                 {/* Bottom */}
                 <div className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs text-muted-foreground">
-                <p>© {new Date().getFullYear()} AnimeStream.</p>
-
-                <div className="flex gap-4">
-                    <Link href="/privacy" className="hover:text-foreground transition-colors">
-                    Privacy
-                    </Link>
-                    <Link href="/terms" className="hover:text-foreground transition-colors">
-                    Terms
-                    </Link>
-                </div>
+                    <p>© {new Date().getFullYear()} AnimeStream.</p>
                 </div>
 
             </div>
