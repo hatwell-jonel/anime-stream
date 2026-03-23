@@ -5,7 +5,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Spinner } from "@/components/ui/spinner";
 import { orpc } from "@/lib/tanstackquery/orpc";
 import AnimeCard from "@/components/ui/anime-card";
-import { Fragment } from "react/jsx-runtime";
+import { Fragment, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
 const categories = [
@@ -57,8 +57,34 @@ export function BrowseContent() {
         ),
         ) ?? [];
 
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
     const currentCategory = categories.find((c) => c.id === category);
+
+    useEffect(() => {
+        if (!hasNextPage) return;
+
+        const target = loadMoreRef.current;
+        if (!target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry?.isIntersecting && !isFetchingNextPage) {
+                    fetchNextPage();
+                }
+            },
+            {
+                root: null,
+                rootMargin: "200px 0px",
+                threshold: 0.1,
+            },
+        );
+
+        observer.observe(target);
+
+        return () => observer.disconnect();
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage, category]);
 
     return (
         <>
@@ -123,26 +149,24 @@ export function BrowseContent() {
 
                             {/* Load More */}
                             {hasNextPage && (
-                                <div className="flex justify-center mt-14">
-                                <button
-                                    onClick={() => fetchNextPage()}
-                                    disabled={isFetchingNextPage}
-                                    className="cursor-pointer px-7 py-2.5 rounded-lg text-sm font-semibold text-red-500 transition disabled:opacity-60"
-                                >
-                                    {isFetchingNextPage ? (
-                                    <span className="flex items-center gap-2">
-                                        <Spinner className="size-4" />
-                                        Loading...
-                                    </span>
-                                    ) : (
-                                        <>
+                                <div ref={loadMoreRef} className="flex justify-center mt-14">
+                                    <button
+                                        onClick={() => fetchNextPage()}
+                                        disabled={isFetchingNextPage}
+                                        className="cursor-pointer px-7 py-2.5 rounded-lg text-sm font-semibold text-red-500 transition disabled:opacity-60"
+                                    >
+                                        {isFetchingNextPage ? (
+                                            <span className="flex items-center gap-2">
+                                                <Spinner className="size-4" />
+                                                Loading...
+                                            </span>
+                                        ) : (
                                             <div className="flex flex-col justify-center items-center">
                                                 Load More
                                                 <ChevronDown />
                                             </div>
-                                        </>
-                                    )}
-                                </button>
+                                        )}
+                                    </button>
                                 </div>
                             )}
                         </>
